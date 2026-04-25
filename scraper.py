@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 """
-HYROX Race Finder — Scraper v7
+HYROX Race Finder — Scraper v8
 ================================
-CONFIRMED API structure from Berlin response:
-  GET https://vivenu.com/api/public/events/{ID}/offers
-  → {"bundles": [], "products": [...], "entitlements": []}
-  → tickets are in products[].variants[]
-  → each variant has: name, price, (availability TBD from full response)
+The /offers endpoint only returns flex add-ons, not race tickets.
 
-For IDs: must be hardcoded — vivenu search API returns 404, seller pages
-return 404 due to unpredictable slugs. IDs are found by:
-  1. Open ticket page in browser
-  2. F12 → Network → Fetch/XHR → look for vivenu.com/api/public/events/XXXX/offers
-  3. Copy the 24-char hex XXXX
+This version tries all plausible vivenu public endpoints for Berlin
+to find where the actual ticket types (Men's Open, Women's Open etc.) live,
+then logs the full response structure so we can parse correctly.
 
 Run once:   python scraper.py --once
-Continuous: python scraper.py
 """
 
 import requests
@@ -75,9 +68,9 @@ DIVISION_PATTERNS = [
 ]
 
 SKIP_WORDS = [
-    "SPECTATOR", "ZUSCHAUER", "VOLUNTEER", "PHOTO", "PARKING",
-    "FLEX", "ADD-ON", "ADDON", "YOUNGSTAR", "CORPORATE", "CHARITY",
-    "MERCHANDISE", "COACH", "SUPPORTER", "GUEST", "LITE",
+    "SPECTATOR","ZUSCHAUER","VOLUNTEER","PHOTO","PARKING",
+    "FLEX","ADD-ON","ADDON","YOUNGSTAR","CORPORATE","CHARITY",
+    "MERCHANDISE","COACH","SUPPORTER","GUEST","LITE",
 ]
 
 STATUS_RANK = {"available": 0, "limited": 1, "soldout": 2}
@@ -93,19 +86,18 @@ def normalise_division(name):
     return None
 
 
-def status_from_variant(variant):
-    """Parse availability from a vivenu product variant."""
-    if variant.get("soldOut") or variant.get("isSoldOut"):
+def status_from_item(item):
+    if item.get("soldOut") or item.get("isSoldOut"):
         return "soldout"
-    status = (variant.get("status") or variant.get("availabilityStatus") or "").upper()
+    status = (item.get("status") or item.get("availabilityStatus") or "").upper()
     if status in ("SOLD_OUT", "SOLDOUT", "EXHAUSTED", "UNAVAILABLE"):
         return "soldout"
     if status in ("HIDDEN", "DRAFT", "INACTIVE"):
         return "hidden"
-    if variant.get("active") is False:
+    if item.get("active") is False:
         return "hidden"
     for field in ("available", "availableAmount", "amount", "remainingQuantity", "stock"):
-        val = variant.get(field)
+        val = item.get(field)
         if isinstance(val, (int, float)):
             if val <= 0:
                 return "soldout"
@@ -115,171 +107,151 @@ def status_from_variant(variant):
     return "available"
 
 
-# ── Event registry ─────────────────────────────────────────────────────────────
-# vivenu_id: 24-char hex ID — found via browser DevTools.
-# HOW TO FIND: open ticket page → F12 → Network → Fetch/XHR → refresh →
-#   look for request to vivenu.com/api/public/events/XXXX/offers → copy XXXX
-#
-# IDs confirmed so far:
-#   berlin: 698272f225feb1c40eb86297  (confirmed from log)
-#
-# To add more: check each event's ticket page in browser as described above
-# and paste the ID into the vivenu_id field below.
+# ── Known IDs ────────────────────────────────────────────────────────────────
+BERLIN_ID = "698272f225feb1c40eb86297"
 
+# All events — IDs to be filled in as we discover them
 EVENTS = [
-    # ── UK ─────────────────────────── add IDs as you find them
-    {"id": "cardiff",      "vivenu_id": None},  # likely sold out / just ended
-    {"id": "birmingham",   "vivenu_id": None},  # not yet on sale
-    {"id": "london-excel", "vivenu_id": None},  # not yet on sale
-
-    # ── Europe ─────────────────────── add IDs as you find them
-    {"id": "berlin",       "vivenu_id": "698272f225feb1c40eb86297"},  # ✓ confirmed
-    {"id": "hamburg",      "vivenu_id": None},
-    {"id": "heerenveen",   "vivenu_id": None},
-    {"id": "maastricht",   "vivenu_id": None},
-    {"id": "utrecht",      "vivenu_id": None},
-    {"id": "gent",         "vivenu_id": None},
-    {"id": "riga",         "vivenu_id": None},
-    {"id": "barcelona-may","vivenu_id": None},
-    {"id": "barcelona-nov","vivenu_id": None},
-    {"id": "valencia",     "vivenu_id": None},
-    {"id": "tenerife",     "vivenu_id": None},
-    {"id": "lyon",         "vivenu_id": None},
-    {"id": "bordeaux",     "vivenu_id": None},
-    {"id": "nice-oct",     "vivenu_id": None},
-    {"id": "paris-dec",    "vivenu_id": None},
-    {"id": "lisboa",       "vivenu_id": None},
-    {"id": "rimini",       "vivenu_id": None},
-    {"id": "rome",         "vivenu_id": None},
-    {"id": "milan",        "vivenu_id": None},
-    {"id": "frankfurt",    "vivenu_id": None},
-    {"id": "dusseldorf",   "vivenu_id": None},
-    {"id": "karlsruhe",    "vivenu_id": None},
-    {"id": "dublin",       "vivenu_id": None},
-    {"id": "geneva",       "vivenu_id": None},
-    {"id": "oslo",         "vivenu_id": None},
-    {"id": "helsinki-may", "vivenu_id": None},
-    {"id": "helsinki-dec", "vivenu_id": None},
-    {"id": "gdansk",       "vivenu_id": None},
-    {"id": "poznan",       "vivenu_id": None},
-    {"id": "stockholm-wc", "vivenu_id": None},
-
-    # ── North America ──────────────── add IDs as you find them
-    {"id": "new-york",       "vivenu_id": None},
-    {"id": "washington",     "vivenu_id": None},
-    {"id": "salt-lake-city", "vivenu_id": None},
-    {"id": "boston",         "vivenu_id": None},
-    {"id": "dallas",         "vivenu_id": None},
-    {"id": "tampa",          "vivenu_id": None},
-    {"id": "denver",         "vivenu_id": None},
-    {"id": "nashville",      "vivenu_id": None},
-    {"id": "anaheim",        "vivenu_id": None},
-    {"id": "ottawa",         "vivenu_id": None},
-    {"id": "toronto",        "vivenu_id": None},
-    {"id": "vancouver",      "vivenu_id": None},
-    {"id": "mexico-city",    "vivenu_id": None},
-
-    # ── Asia-Pacific ───────────────── add IDs as you find them
-    {"id": "sydney",     "vivenu_id": None},
-    {"id": "hong-kong",  "vivenu_id": None},
-    {"id": "chiba",      "vivenu_id": None},
-    {"id": "incheon",    "vivenu_id": None},
-    {"id": "seoul",      "vivenu_id": None},
-    {"id": "hangzhou",   "vivenu_id": None},
-    {"id": "jakarta",    "vivenu_id": None},
-    {"id": "delhi",      "vivenu_id": None},
-
-    # ── Latin America ──────────────── add IDs as you find them
-    {"id": "buenos-aires", "vivenu_id": None},
-
-    # ── Africa ─────────────────────── add IDs as you find them
+    {"id": "cardiff",          "vivenu_id": None},
+    {"id": "birmingham",       "vivenu_id": None},
+    {"id": "london-excel",     "vivenu_id": None},
+    {"id": "berlin",           "vivenu_id": BERLIN_ID},
+    {"id": "hamburg",          "vivenu_id": None},
+    {"id": "heerenveen",       "vivenu_id": None},
+    {"id": "maastricht",       "vivenu_id": None},
+    {"id": "utrecht",          "vivenu_id": None},
+    {"id": "gent",             "vivenu_id": None},
+    {"id": "riga",             "vivenu_id": None},
+    {"id": "barcelona-may",    "vivenu_id": None},
+    {"id": "barcelona-nov",    "vivenu_id": None},
+    {"id": "valencia",         "vivenu_id": None},
+    {"id": "tenerife",         "vivenu_id": None},
+    {"id": "lyon",             "vivenu_id": None},
+    {"id": "bordeaux",         "vivenu_id": None},
+    {"id": "nice-oct",         "vivenu_id": None},
+    {"id": "paris-dec",        "vivenu_id": None},
+    {"id": "lisboa",           "vivenu_id": None},
+    {"id": "rimini",           "vivenu_id": None},
+    {"id": "rome",             "vivenu_id": None},
+    {"id": "milan",            "vivenu_id": None},
+    {"id": "frankfurt",        "vivenu_id": None},
+    {"id": "dusseldorf",       "vivenu_id": None},
+    {"id": "karlsruhe",        "vivenu_id": None},
+    {"id": "dublin",           "vivenu_id": None},
+    {"id": "geneva",           "vivenu_id": None},
+    {"id": "oslo",             "vivenu_id": None},
+    {"id": "helsinki-may",     "vivenu_id": None},
+    {"id": "helsinki-dec",     "vivenu_id": None},
+    {"id": "gdansk",           "vivenu_id": None},
+    {"id": "poznan",           "vivenu_id": None},
+    {"id": "stockholm-wc",     "vivenu_id": None},
+    {"id": "new-york",         "vivenu_id": None},
+    {"id": "washington",       "vivenu_id": None},
+    {"id": "salt-lake-city",   "vivenu_id": None},
+    {"id": "boston",           "vivenu_id": None},
+    {"id": "dallas",           "vivenu_id": None},
+    {"id": "tampa",            "vivenu_id": None},
+    {"id": "denver",           "vivenu_id": None},
+    {"id": "nashville",        "vivenu_id": None},
+    {"id": "anaheim",          "vivenu_id": None},
+    {"id": "ottawa",           "vivenu_id": None},
+    {"id": "toronto",          "vivenu_id": None},
+    {"id": "vancouver",        "vivenu_id": None},
+    {"id": "mexico-city",      "vivenu_id": None},
+    {"id": "sydney",           "vivenu_id": None},
+    {"id": "hong-kong",        "vivenu_id": None},
+    {"id": "chiba",            "vivenu_id": None},
+    {"id": "incheon",          "vivenu_id": None},
+    {"id": "seoul",            "vivenu_id": None},
+    {"id": "hangzhou",         "vivenu_id": None},
+    {"id": "jakarta",          "vivenu_id": None},
+    {"id": "delhi",            "vivenu_id": None},
+    {"id": "buenos-aires",     "vivenu_id": None},
     {"id": "johannesburg-may", "vivenu_id": None},
     {"id": "johannesburg-nov", "vivenu_id": None},
     {"id": "cape-town-aug",    "vivenu_id": None},
 ]
 
 
-# ── Fetch and parse ───────────────────────────────────────────────────────────
+# ── Endpoint discovery for Berlin ─────────────────────────────────────────────
 
-def fetch_and_parse(vivenu_id, event_id):
+def probe_berlin_endpoints():
     """
-    Call /api/public/events/{id}/offers and parse products[].variants[].
-    Logs the full structure if parsing yields 0 divisions, so we can debug.
+    Try every plausible vivenu endpoint for Berlin to find where
+    the actual ticket types live. Log the full response for each hit.
     """
-    url = f"https://vivenu.com/api/public/events/{vivenu_id}/offers"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-        log.info(f"    {url} → {r.status_code} ({len(r.content)} bytes)")
-        if r.status_code != 200:
-            return None
-        data = r.json()
-    except Exception as e:
-        log.warning(f"    Error: {e}")
-        return None
+    vid = BERLIN_ID
+    endpoints = [
+        f"https://vivenu.com/api/public/events/{vid}",
+        f"https://vivenu.com/api/public/events/{vid}/tickets",
+        f"https://vivenu.com/api/public/events/{vid}/ticketTypes",
+        f"https://vivenu.com/api/public/events/{vid}/ticket-types",
+        f"https://vivenu.com/api/public/events/{vid}/categories",
+        f"https://vivenu.com/api/public/events/{vid}/priceCategories",
+        f"https://vivenu.com/api/public/events/{vid}/price-categories",
+        f"https://vivenu.com/api/public/events/{vid}/checkout",
+        f"https://vivenu.com/api/public/events/{vid}/shop",
+        f"https://da.hyrox.com/api/public/events/{vid}",
+        f"https://da.hyrox.com/api/public/events/{vid}/offers",
+        f"https://da.hyrox.com/api/public/events/{vid}/tickets",
+        f"https://da.hyrox.com/api/events/{vid}",
+        f"https://da.hyrox.com/api/events/{vid}/tickets",
+    ]
 
-    log.info(f"    Top-level keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
+    log.info(f"── Probing {len(endpoints)} endpoints for Berlin ──")
+    for url in endpoints:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+            size = len(r.content)
+            log.info(f"  {r.status_code} ({size:6d} bytes)  {url}")
+            if r.status_code == 200 and size > 100:
+                try:
+                    data = r.json()
+                    # Log top-level structure
+                    if isinstance(data, dict):
+                        keys = list(data.keys())
+                        log.info(f"    Keys: {keys}")
+                        # Look for anything that might be ticket types
+                        for k in keys:
+                            v = data[k]
+                            if isinstance(v, list) and len(v) > 0:
+                                first = v[0]
+                                if isinstance(first, dict):
+                                    name = first.get("name", "")
+                                    log.info(f"    {k}[0].name = {name!r}  (list of {len(v)})")
+                    elif isinstance(data, list) and len(data) > 0:
+                        first = data[0]
+                        if isinstance(first, dict):
+                            name = first.get("name", "")
+                            log.info(f"    list[0].name = {name!r}  (list of {len(data)})")
+                except Exception:
+                    log.info(f"    Not JSON or parse error")
+        except Exception as e:
+            log.info(f"  ERR  {url}: {e}")
+        time.sleep(0.3)
 
+
+# ── Parse tickets from event data (once we know which endpoint works) ─────────
+
+def extract_divisions(items, currency=""):
+    """Extract division availability from a flat list of ticket/offer items."""
     div_best  = {}
     div_price = {}
 
-    def process_variant(variant_name, variant, parent_currency=""):
-        """Try to match a variant to a division and record its status."""
-        div = normalise_division(variant_name)
+    for item in items:
+        name = item.get("name") or item.get("title") or ""
+        div  = normalise_division(name)
         if div is None:
-            return
-        st = status_from_variant(variant)
+            continue
+        st = status_from_item(item)
         if st == "hidden":
-            return
+            continue
         if div not in div_best or STATUS_RANK.get(st, 2) < STATUS_RANK.get(div_best[div], 2):
             div_best[div] = st
-            price = variant.get("price") or variant.get("basePrice") or variant.get("gross")
-            currency = variant.get("currency") or parent_currency
+            price = item.get("price") or item.get("basePrice") or item.get("gross")
+            cur   = item.get("currency") or currency
             if price is not None:
-                div_price[div] = {"amount": price, "currency": currency}
-
-    if isinstance(data, dict):
-        currency = data.get("currency", "")
-
-        # ── CONFIRMED: products[].variants[] contains ticket types ────────────
-        products = data.get("products") or []
-        log.info(f"    products count: {len(products)}")
-        for product in products:
-            product_name = product.get("name", "")
-            product_currency = product.get("currency") or currency
-            variants = product.get("variants") or []
-            for variant in variants:
-                # Variant name may be on the variant or inherited from product
-                vname = variant.get("name") or product_name
-                process_variant(vname, variant, product_currency)
-                # Also try the product name itself if variant name is generic
-                if vname != product_name:
-                    process_variant(product_name, variant, product_currency)
-
-        # ── Also check entitlements (were empty for Berlin but may vary) ──────
-        entitlements = data.get("entitlements") or []
-        log.info(f"    entitlements count: {len(entitlements)}")
-        for item in entitlements:
-            name = item.get("name") or (item.get("ticketType") or {}).get("name") or ""
-            process_variant(name, item, currency)
-
-        # ── Also check bundles ────────────────────────────────────────────────
-        bundles = data.get("bundles") or []
-        for bundle in bundles:
-            bname = bundle.get("name", "")
-            process_variant(bname, bundle, currency)
-
-    elif isinstance(data, list):
-        for item in data:
-            name = item.get("name", "")
-            process_variant(name, item)
-
-    log.info(f"    → {len(div_best)} divisions: {list(div_best.keys())}")
-
-    # If still 0 divisions, log the full product names so we can see what's there
-    if len(div_best) == 0 and isinstance(data, dict):
-        products = data.get("products") or []
-        for p in products[:5]:
-            log.info(f"    Product: {p.get('name')!r} | variants: {[v.get('name') for v in (p.get('variants') or [])]}")
+                div_price[div] = {"amount": price, "currency": cur}
 
     return {
         div: {"status": st, "price": div_price.get(div)}
@@ -287,10 +259,43 @@ def fetch_and_parse(vivenu_id, event_id):
     }
 
 
+def fetch_event(vivenu_id):
+    """
+    Fetch ticket availability for a known vivenu event ID.
+    Tries the event endpoint directly (which should include tickets[]).
+    """
+    # Primary: the event object itself should have tickets[]
+    url = f"https://vivenu.com/api/public/events/{vivenu_id}"
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+        log.info(f"    Event endpoint: {r.status_code} ({len(r.content)} bytes)")
+        if r.status_code == 200:
+            data = r.json()
+            currency = data.get("currency", "") if isinstance(data, dict) else ""
+            # Try tickets[] directly on event
+            tickets = data.get("tickets") or []
+            if tickets:
+                log.info(f"    Found {len(tickets)} tickets on event object")
+                return extract_divisions(tickets, currency)
+            # Fall through to other keys
+            for key in ("ticketTypes", "categories", "priceCategories"):
+                items = data.get(key) or []
+                if items:
+                    log.info(f"    Found {len(items)} items under '{key}'")
+                    return extract_divisions(items, currency)
+    except Exception as e:
+        log.warning(f"    Event endpoint error: {e}")
+
+    return {}
+
+
 # ── Main scrape ───────────────────────────────────────────────────────────────
 
 def run_scrape():
-    log.info(f"── Scrape v7 starting ({len(EVENTS)} events) ──")
+    # Always probe Berlin first to find the correct endpoint
+    probe_berlin_endpoints()
+
+    log.info(f"\n── Main scrape starting ({len(EVENTS)} events) ──")
     results = {}
 
     for event in EVENTS:
@@ -307,26 +312,17 @@ def run_scrape():
             continue
 
         log.info(f"  [{event_id}] vivenu_id={vivenu_id}")
-        divisions = fetch_and_parse(vivenu_id, event_id)
+        divisions = fetch_event(vivenu_id)
         time.sleep(0.8)
 
-        if divisions is None:
-            results[event_id] = {
-                "event_id":   event_id,
-                "fetched_at": datetime.now(timezone.utc).isoformat(),
-                "status":     "api_error",
-                "vivenu_id":  vivenu_id,
-                "divisions":  {},
-            }
-        else:
-            results[event_id] = {
-                "event_id":   event_id,
-                "fetched_at": datetime.now(timezone.utc).isoformat(),
-                "status":     "ok",
-                "vivenu_id":  vivenu_id,
-                "divisions":  divisions,
-            }
-            log.info(f"  [{event_id}]: ✓ {len(divisions)} divisions")
+        results[event_id] = {
+            "event_id":   event_id,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "status":     "ok",
+            "vivenu_id":  vivenu_id,
+            "divisions":  divisions,
+        }
+        log.info(f"  [{event_id}]: ✓ {len(divisions)} divisions")
 
     output = {
         "scraped_at":    datetime.now(timezone.utc).isoformat(),
@@ -334,11 +330,8 @@ def run_scrape():
         "events":        results,
     }
     OUTPUT_FILE.write_text(json.dumps(output, indent=2))
-
-    ok      = sum(1 for v in results.values() if v.get("status") == "ok")
-    no_sale = sum(1 for v in results.values() if v.get("status") == "not_on_sale")
-    errors  = sum(1 for v in results.values() if v.get("status") == "api_error")
-    log.info(f"── Done: {ok} ok, {no_sale} not on sale, {errors} errors ──\n")
+    ok = sum(1 for v in results.values() if v.get("status") == "ok")
+    log.info(f"── Done: {ok} with vivenu IDs ──\n")
 
 
 def main():
