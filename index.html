@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYROX Race Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --card: #1a1a1a;
+  --border: rgba(255,255,255,0.07);
+  --border-h: rgba(255,255,255,0.15);
+  --white: #f0ede8;
+  --muted: rgba(240,237,232,0.38);
+  --faint: rgba(240,237,232,0.15);
+  --accent: #d4f000;
+  --accent-dim: rgba(212,240,0,0.12);
+  --accent-txt: #0d0d0d;
+  --green: #00e676;
+  --green-dim: rgba(0,230,118,0.1);
+  --amber: #ffc542;
+  --amber-dim: rgba(255,197,66,0.1);
+  --red: #ff5252;
+  --red-dim: rgba(255,82,82,0.08);
+  --blue: #5bb8ff;
+  --blue-dim: rgba(91,184,255,0.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 24px;height:56px}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.logo span{color:var(--white);font-weight:400}
+.freshness{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);white-space:nowrap}
+.freshness .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 2s infinite}
+.freshness .dot.stale{background:var(--amber);animation:none}
+.freshness .dot.error{background:var(--red);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* SEARCH PANEL */
+.search-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 24px}
+.search-panel h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(30px,5vw,54px);line-height:.9;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:5px}
+.search-panel h1 em{font-style:normal;color:var(--accent)}
+.tagline{font-size:13px;color:var(--muted);font-weight:300;margin-bottom:18px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:4px;flex:1 1 130px;min-width:110px;max-width:210px}
+.fg.wide{max-width:230px;flex-basis:160px}
+.fg label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding-left:2px}
+select{appearance:none;-webkit-appearance:none;background:var(--bg);border:1px solid var(--border);color:var(--white);font-family:'Barlow',sans-serif;font-size:13px;padding:8px 28px 8px 10px;border-radius:6px;width:100%;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='rgba(240,237,232,0.3)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .12s}
+select:hover{border-color:var(--border-h)}
+select:focus{outline:none;border-color:var(--accent)}
+select option{background:#1a1a1a}
+.btn-reset{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:11px;letter-spacing:.07em;text-transform:uppercase;padding:8px 14px;border-radius:6px;cursor:pointer;align-self:flex-end;transition:all .12s;white-space:nowrap}
+.btn-reset:hover{border-color:var(--border-h);color:var(--white)}
+
+/* LEGEND */
+.legend{display:flex;align-items:center;gap:16px;padding:12px 24px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ld-available{background:var(--green)}
+.ld-limited{background:var(--amber)}
+.ld-soldout{background:var(--red)}
+.ld-unknown{background:rgba(255,255,255,0.2)}
+
+/* RESULTS BAR */
+.results-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px 10px;flex-wrap:wrap;gap:10px}
+.results-count{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.results-count strong{color:var(--white);font-size:19px}
+.sort-row{display:flex;gap:6px}
+.sort-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:5px 11px;border-radius:4px;cursor:pointer;transition:all .12s}
+.sort-btn:hover{border-color:var(--border-h);color:var(--white)}
+.sort-btn.active{background:var(--accent);color:var(--accent-txt);border-color:var(--accent);font-weight:600}
+
+/* GRID */
+.grid{padding:0 24px 48px;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .12s,transform .12s}
+.card:hover{border-color:var(--border-h);transform:translateY(-1px)}
+
+.card-strip{display:flex;gap:6px;padding:10px 14px 0;flex-wrap:wrap}
+.pill{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.pill-region{background:var(--accent-dim);color:var(--accent)}
+.pill-season{background:rgba(255,255,255,0.06);color:var(--muted)}
+.pill-wc{background:var(--blue-dim);color:var(--blue)}
+
+.card-body{padding:10px 14px 11px;border-bottom:1px solid var(--border)}
+.event-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.02em;line-height:1.05;margin-bottom:5px;color:var(--white)}
+.event-info{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.event-info .dates{font-weight:500;color:rgba(240,237,232,0.6)}
+
+/* DIVISIONS */
+.card-divisions{padding:10px 14px;border-bottom:1px solid var(--border);flex:1}
+.div-heading{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.div-chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;border:1px solid;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.chip .cdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* availability states */
+.chip-available{background:var(--green-dim);color:var(--green);border-color:rgba(0,230,118,.25)}
+.chip-available .cdot{background:var(--green)}
+.chip-limited{background:var(--amber-dim);color:var(--amber);border-color:rgba(255,197,66,.25)}
+.chip-limited .cdot{background:var(--amber)}
+.chip-soldout{background:var(--red-dim);color:rgba(255,82,82,.5);border-color:rgba(255,82,82,.15);text-decoration:line-through;opacity:.7}
+.chip-soldout .cdot{background:var(--red);opacity:.5}
+.chip-unknown{background:rgba(255,255,255,.04);color:rgba(240,237,232,.35);border-color:rgba(255,255,255,.08)}
+.chip-unknown .cdot{background:rgba(255,255,255,.2)}
+.chip-nodata{background:rgba(255,255,255,.03);color:rgba(240,237,232,.25);border-color:rgba(255,255,255,.06);font-style:italic}
+
+/* highlighted chip when filtering by division */
+.chip.hl{outline:2px solid var(--accent);outline-offset:1px}
+
+/* CARD FOOTER */
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:10px}
+.price-block{flex:1;min-width:0}
+.price-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-bottom:2px}
+.price-value{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;line-height:1;color:var(--white)}
+.price-value .sym{font-size:14px;font-weight:400;color:var(--muted)}
+.price-caveat{font-size:10px;color:var(--faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.price-unknown{font-size:11px;color:var(--faint);font-style:italic}
+.btn-book{background:var(--accent);color:var(--accent-txt);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;border:none;border-radius:6px;padding:9px 16px;cursor:pointer;white-space:nowrap;transition:opacity .12s,transform .1s;flex-shrink:0}
+.btn-book:hover{opacity:.88;transform:scale(1.02)}
+
+/* EMPTY */
+.empty{grid-column:1/-1;text-align:center;padding:5rem 2rem;color:var(--muted)}
+.empty h3{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;text-transform:uppercase;margin-bottom:6px;color:var(--white)}
+
+/* FOOTER NOTE */
+.footer-note{margin:0 24px 32px;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--faint);line-height:1.6}
+.footer-note strong{color:rgba(240,237,232,.4)}
+
+/* RESPONSIVE */
+@media(max-width:580px){
+  .header,.search-panel{padding-left:16px;padding-right:16px}
+  .legend,.results-bar,.grid,.footer-note{padding-left:16px;padding-right:16px}
+  .fg{max-width:100%}
+  .logo span{display:none}
+  .freshness span{display:none}
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">HYROX<span> Race Finder</span></div>
+  <div class="freshness">
+    <span class="dot" id="freshness-dot"></span>
+    <span id="freshness-text">Loading availability…</span>
+  </div>
+</div>
+
+<div class="search-panel">
+  <h1>Find your <em>next race</em></h1>
+  <p class="tagline">Every confirmed HYROX event — filter by division &amp; availability. Data refreshes every 15 minutes from the official HYROX ticketing platform.</p>
+  <div class="filters">
+    <div class="fg wide">
+      <label>Division</label>
+      <select id="f-div">
+        <option value="">All divisions</option>
+        <option value="mens-open">Men's Open</option>
+        <option value="womens-open">Women's Open</option>
+        <option value="pro-men">Pro Men</option>
+        <option value="pro-women">Pro Women</option>
+        <option value="pro-doubles-men">Pro Doubles Men</option>
+        <option value="pro-doubles-women">Pro Doubles Women</option>
+        <option value="doubles-men">Doubles Men</option>
+        <option value="doubles-women">Doubles Women</option>
+        <option value="doubles-mixed">Doubles Mixed</option>
+        <option value="relay-men">Relay Men</option>
+        <option value="relay-women">Relay Women</option>
+        <option value="relay-mixed">Relay Mixed</option>
+        <option value="adaptive-men">Adaptive Men</option>
+        <option value="adaptive-women">Adaptive Women</option>
+      </select>
+    </div>
+    <div class="fg wide">
+      <label>Region</label>
+      <select id="f-region">
+        <option value="">All regions</option>
+        <option value="UK">United Kingdom</option>
+        <option value="Europe">Europe (excl. UK)</option>
+        <option value="North America">North America</option>
+        <option value="Asia-Pacific">Asia-Pacific</option>
+        <option value="Asia">Asia</option>
+        <option value="Latin America">Latin America</option>
+        <option value="Africa">Africa</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Availability</label>
+      <select id="f-avail">
+        <option value="">Any</option>
+        <option value="available">Available ✓</option>
+        <option value="limited">Limited spots</option>
+        <option value="soldout">Sold out</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Month</label>
+      <select id="f-month">
+        <option value="">Any time</option>
+        <option value="2026-04">Apr 2026</option>
+        <option value="2026-05">May 2026</option>
+        <option value="2026-06">Jun 2026</option>
+        <option value="2026-07">Jul 2026</option>
+        <option value="2026-08">Aug 2026</option>
+        <option value="2026-09">Sep 2026</option>
+        <option value="2026-10">Oct 2026</option>
+        <option value="2026-11">Nov 2026</option>
+        <option value="2026-12">Dec 2026</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Show</label>
+      <select id="f-show">
+        <option value="upcoming">Upcoming only</option>
+        <option value="all">All incl. past</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="reset()">Clear</button>
+  </div>
+</div>
+
+<div class="legend">
+  <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);">Availability key:</span>
+  <span class="legend-item"><span class="legend-dot ld-available"></span> Tickets available</span>
+  <span class="legend-item"><span class="legend-dot ld-limited"></span> Limited spots (≤20)</span>
+  <span class="legend-item"><span class="legend-dot ld-soldout"></span> Sold out</span>
+  <span class="legend-item"><span class="legend-dot ld-unknown"></span> Offered / status unknown</span>
+</div>
+
+<div class="results-bar">
+  <div class="results-count" id="count"></div>
+  <div class="sort-row">
+    <button class="sort-btn active" id="s-date" onclick="setSort('date')">Date</button>
+    <button class="sort-btn" id="s-price" onclick="setSort('price')">Price</button>
+    <button class="sort-btn" id="s-city" onclick="setSort('city')">City A–Z</button>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="footer-note">
+  <strong>How this works:</strong> A scraper runs every 15 minutes, fetching ticket category data from HYROX's official vivenu storefronts (gb.hyrox.com, usa.hyrox.com etc.) — the same data your browser loads when you visit the buy page. It writes <code>availability.json</code>, which this page reads on load. Green = tickets available now. Amber = ≤20 spots remaining. Red = sold out. Grey = division is offered but availability not yet fetched (event not on sale yet, or scraper hasn't reached it). Prices shown are live from vivenu where available. Always confirm on hyrox.com before purchasing. Unofficial fan tool — not affiliated with HYROX GmbH.
+</div>
+
+<script>
+// ── Static event catalogue ────────────────────────────────────────────────
+// Dates, venues, and which divisions are on the programme (from verified schedules).
+// Availability status is overlaid from availability.json at runtime.
+
+const TODAY = new Date();
+
+const DIVS = {
+  'mens-open':        "Men's Open",
+  'womens-open':      "Women's Open",
+  'pro-men':          "Pro Men",
+  'pro-women':        "Pro Women",
+  'pro-doubles-men':  "Pro Doubles Men",
+  'pro-doubles-women':"Pro Doubles Women",
+  'doubles-men':      "Doubles Men",
+  'doubles-women':    "Doubles Women",
+  'doubles-mixed':    "Doubles Mixed",
+  'relay-men':        "Relay Men",
+  'relay-women':      "Relay Women",
+  'relay-mixed':      "Relay Mixed",
+  'adaptive-men':     "Adaptive Men",
+  'adaptive-women':   "Adaptive Women",
+};
+
+// Static catalogue — divisions listed here are confirmed from published schedules.
+// availability.json overlays real-time status on top.
+const EVENTS = [
+  {id:'cardiff',name:'HYROX Cardiff',city:'Cardiff',country:'United Kingdom',region:'UK',dates:'29 Apr – 4 May 2026',start:'2026-04-29',end:'2026-05-04',venue:'Principality Stadium, Cardiff',url:'https://hyrox.com/event/hyrox-cardiff/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','doubles-men','doubles-women','doubles-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'£',amount:100,note:'approx.'}},
+  {id:'lisboa',name:'HYROX Lisboa',city:'Lisbon',country:'Portugal',region:'Europe',dates:'1–3 May 2026',start:'2026-05-01',end:'2026-05-03',venue:'Altice Arena, Lisbon',url:'https://hyrox.com/event/hyrox-lisboa/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'hong-kong',name:'Cigna HYROX Hong Kong',city:'Hong Kong',country:'Hong Kong',region:'Asia',dates:'8–10 May 2026',start:'2026-05-08',end:'2026-05-10',venue:'AsiaWorld-Expo, Hong Kong',url:'https://hyrox.com/event/hyrox-hong-kong2026/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed'],staticPrice:null},
+  {id:'helsinki-may',name:'HYROX Helsinki',city:'Helsinki',country:'Finland',region:'Europe',dates:'9–10 May 2026',start:'2026-05-09',end:'2026-05-10',venue:'Messukeskus Helsinki',url:'https://hyrox.com/event/hyrox-helsinki/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'ottawa',name:'GoodLife HYROX Ottawa',city:'Ottawa',country:'Canada',region:'North America',dates:'14–17 May 2026',start:'2026-05-14',end:'2026-05-17',venue:'Ottawa Convention Centre',url:'https://hyrox.com/event/hyrox-ottawa/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed'],staticPrice:null},
+  {id:'barcelona-may',name:'Biotherm HYROX Barcelona',city:'Barcelona',country:'Spain',region:'Europe',dates:'14–17 May 2026',start:'2026-05-14',end:'2026-05-17',venue:'Fira de Barcelona',url:'https://hyrox.com/event/hyrox-barcelona/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'heerenveen',name:'HYROX Heerenveen',city:'Heerenveen',country:'Netherlands',region:'Europe',dates:'14–17 May 2026',start:'2026-05-14',end:'2026-05-17',venue:'Thialf Arena, Heerenveen',url:'https://hyrox.com/event/hyrox-heerenveen/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'incheon',name:'AirAsia HYROX Incheon',city:'Incheon',country:'South Korea',region:'Asia',dates:'15–17 May 2026',start:'2026-05-15',end:'2026-05-17',venue:'KINTEX, Incheon',url:'https://hyrox.com/event/hyrox-incheon/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'lyon',name:'Creapure HYROX Lyon',city:'Lyon',country:'France',region:'Europe',dates:'20–24 May 2026',start:'2026-05-20',end:'2026-05-24',venue:'Eurexpo, Lyon',url:'https://hyrox.com/event/hyrox-lyon/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'berlin',name:'GilletteLabs HYROX Berlin',city:'Berlin',country:'Germany',region:'Europe',dates:'22–31 May 2026',start:'2026-05-22',end:'2026-05-31',venue:'Tempelhof, Berlin',url:'https://hyrox.com/event/hyrox-berlin/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','pro-doubles-men','pro-doubles-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'€',amount:119,note:'verified vivenu'}},
+  {id:'new-york',name:'NYU Langone HYROX New York',city:'New York',country:'USA',region:'North America',dates:'28 May – 7 Jun 2026',start:'2026-05-28',end:'2026-06-07',venue:'Jacob K. Javits Center, NYC',url:'https://hyrox.com/event/hyrox-new-york/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:null},
+  {id:'rimini',name:'HYROX Rimini',city:'Rimini',country:'Italy',region:'Europe',dates:'28–31 May 2026',start:'2026-05-28',end:'2026-05-31',venue:'Rimini Expo Centre',url:'https://hyrox.com/event/hyrox-rimini/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'johannesburg-may',name:'Virgin Active HYROX Johannesburg',city:'Johannesburg',country:'South Africa',region:'Africa',dates:'30–31 May 2026',start:'2026-05-30',end:'2026-05-31',venue:'Gallagher Convention Centre',url:'https://hyrox.com/event/virgin-active-hyrox-johannesburg-25-26/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'riga',name:'Lemon Gym HYROX Riga',city:'Riga',country:'Latvia',region:'Europe',dates:'30–31 May 2026',start:'2026-05-30',end:'2026-05-31',venue:'Arena Riga',url:'https://hyrox.com/event/hyrox-riga/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women'],staticPrice:null},
+  {id:'buenos-aires',name:'HYROX Buenos Aires',city:'Buenos Aires',country:'Argentina',region:'Latin America',dates:'13 Jun 2026',start:'2026-06-13',end:'2026-06-13',venue:'La Rural, Buenos Aires',url:'https://hyrox.com/event/hyrox-buenos-aires/',season:'25/26',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'stockholm-wc',name:'PUMA HYROX World Championships',city:'Stockholm',country:'Sweden',region:'Europe',dates:'18–21 Jun 2026',start:'2026-06-18',end:'2026-06-21',venue:'Stockholm (venue TBC)',url:'https://hyrox.com/event/puma-hyrox-world-championships-stockholm/',season:'25/26',type:'world-champs',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed'],staticPrice:null},
+  {id:'jakarta',name:'AirAsia HYROX Jakarta',city:'Jakarta',country:'Indonesia',region:'Asia',dates:'27–28 Jun 2026',start:'2026-06-27',end:'2026-06-28',venue:'Jakarta Convention Center',url:'https://hyrox.com/event/hyrox-jakarta/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'sydney',name:'BYD HYROX Sydney',city:'Sydney',country:'Australia',region:'Asia-Pacific',dates:'1–5 Jul 2026',start:'2026-07-01',end:'2026-07-05',venue:'ICC Sydney',url:'https://hyrox.com/event/hyrox-sydney/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'hangzhou',name:'HYROX Hangzhou',city:'Hangzhou',country:'China',region:'Asia',dates:'4–5 Jul 2026',start:'2026-07-04',end:'2026-07-05',venue:'Hangzhou Exhibition Centre',url:'https://hyrox.com/event/hyrox-hangzhou/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'delhi',name:"Masters' Union HYROX Delhi",city:'Delhi',country:'India',region:'Asia',dates:'24–26 Jul 2026',start:'2026-07-24',end:'2026-07-26',venue:'Bharat Mandapam, Delhi',url:'https://hyrox.com/event/hyrox-delhi/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'chiba',name:'AirAsia HYROX Chiba',city:'Chiba',country:'Japan',region:'Asia',dates:'7–9 Aug 2026',start:'2026-08-07',end:'2026-08-09',venue:'Makuhari Messe, Chiba',url:'https://hyrox.com/event/hyrox-chiba/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'cape-town-aug',name:'Virgin Active HYROX Cape Town',city:'Cape Town',country:'South Africa',region:'Africa',dates:'14–15 Aug 2026',start:'2026-08-14',end:'2026-08-15',venue:'CTICC, Cape Town',url:'https://hyrox.com/event/virgin-active-hyrox-cape-town-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'washington',name:'Amazfit HYROX Washington D.C.',city:'Washington D.C.',country:'USA',region:'North America',dates:'3–7 Sep 2026',start:'2026-09-03',end:'2026-09-07',venue:'Walter E. Washington Convention Center',url:'https://hyrox.com/event/hyrox-washington-d-c-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:null},
+  {id:'tenerife',name:'HYROX Tenerife',city:'Tenerife',country:'Spain',region:'Europe',dates:'4–6 Sep 2026',start:'2026-09-04',end:'2026-09-06',venue:'Tenerife Auditorium & Convention Centre',url:'https://hyrox.com/event/hyrox-tenerife/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'maastricht',name:'HYROX Maastricht',city:'Maastricht',country:'Netherlands',region:'Europe',dates:'17–20 Sep 2026',start:'2026-09-17',end:'2026-09-20',venue:'MECC Maastricht',url:'https://hyrox.com/event/hyrox-maastricht/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'salt-lake-city',name:'InBody HYROX Salt Lake City',city:'Salt Lake City',country:'USA',region:'North America',dates:'18–20 Sep 2026',start:'2026-09-18',end:'2026-09-20',venue:'Salt Palace Convention Center',url:'https://hyrox.com/event/hyrox-salt-lake-city-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:null},
+  {id:'rome',name:'HYROX Rome',city:'Rome',country:'Italy',region:'Europe',dates:'24–27 Sep 2026',start:'2026-09-24',end:'2026-09-27',venue:'Fiera Roma',url:'https://hyrox.com/event/hyrox-rome/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'oslo',name:'HYROX Oslo',city:'Oslo',country:'Norway',region:'Europe',dates:'25–27 Sep 2026',start:'2026-09-25',end:'2026-09-27',venue:'Oslo Spektrum',url:'https://hyrox.com/event/hyrox-oslo/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'bordeaux',name:'Intersport HYROX Bordeaux',city:'Bordeaux',country:'France',region:'Europe',dates:'30 Sep – 4 Oct 2026',start:'2026-09-30',end:'2026-10-04',venue:'Bordeaux Métropole Arena',url:'https://hyrox.com/event/hyrox-bordeaux-s26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'karlsruhe',name:'HYROX Karlsruhe',city:'Karlsruhe',country:'Germany',region:'Europe',dates:'1–4 Oct 2026',start:'2026-10-01',end:'2026-10-04',venue:'Messe Karlsruhe',url:'https://hyrox.com/event/hyrox-karlsruhe/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'toronto',name:'GoodLife HYROX Toronto',city:'Toronto',country:'Canada',region:'North America',dates:'1–4 Oct 2026',start:'2026-10-01',end:'2026-10-04',venue:'Enercare Centre, Toronto',url:'https://hyrox.com/event/goodlife-hyrox-toronto-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'boston',name:'HWPO HYROX Boston',city:'Boston',country:'USA',region:'North America',dates:'8–11 Oct 2026',start:'2026-10-08',end:'2026-10-11',venue:'Boston Convention & Exhibition Center',url:'https://hyrox.com/event/hwpo-hyrox-boston-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-mixed'],staticPrice:null},
+  {id:'geneva',name:"Let's Go Fitness HYROX Geneva",city:'Geneva',country:'Switzerland',region:'Europe',dates:'9–11 Oct 2026',start:'2026-10-09',end:'2026-10-11',venue:'Palexpo, Geneva',url:'https://hyrox.com/event/hyrox-geneva/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'gdansk',name:'HYROX Gdańsk',city:'Gdańsk',country:'Poland',region:'Europe',dates:'10–11 Oct 2026',start:'2026-10-10',end:'2026-10-11',venue:'AmberExpo, Gdańsk',url:'https://hyrox.com/event/hyrox-gdansk/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'valencia',name:'HYROX Valencia',city:'Valencia',country:'Spain',region:'Europe',dates:'16–18 Oct 2026',start:'2026-10-16',end:'2026-10-18',venue:'Feria Valencia',url:'https://hyrox.com/event/hyrox-valencia/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'tampa',name:'HYROX Tampa',city:'Tampa',country:'USA',region:'North America',dates:'23–25 Oct 2026',start:'2026-10-23',end:'2026-10-25',venue:'Tampa Convention Center',url:'https://hyrox.com/event/hyrox-tampa/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'birmingham',name:'HYROX Birmingham',city:'Birmingham',country:'United Kingdom',region:'UK',dates:'27 Oct – 1 Nov 2026',start:'2026-10-27',end:'2026-11-01',venue:'NEC Birmingham',url:'https://hyrox.com/event/hyrox-birmingham/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'£',amount:100,note:'approx.'}},
+  {id:'hamburg',name:'Intersport HYROX Hamburg',city:'Hamburg',country:'Germany',region:'Europe',dates:'28 Oct – 1 Nov 2026',start:'2026-10-28',end:'2026-11-01',venue:'Hamburg Messe',url:'https://hyrox.com/event/intersport-hyrox-hamburg/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'€',amount:119,note:'approx.'}},
+  {id:'nice-oct',name:'TrainSweatEat HYROX Nice',city:'Nice',country:'France',region:'Europe',dates:'29 Oct – 1 Nov 2026',start:'2026-10-29',end:'2026-11-01',venue:'Palais des Expositions, Nice',url:'https://hyrox.com/event/hyrox-nice-s26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'mexico-city',name:'HYROX Mexico City',city:'Mexico City',country:'Mexico',region:'Latin America',dates:'30 Oct – 1 Nov 2026',start:'2026-10-30',end:'2026-11-01',venue:'Centro Banamex, Mexico City',url:'https://hyrox.com/event/hyrox-mexico-city/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'dublin',name:'HYROX Dublin',city:'Dublin',country:'Ireland',region:'Europe',dates:'11–15 Nov 2026',start:'2026-11-11',end:'2026-11-15',venue:'RDS Arena, Dublin',url:'https://hyrox.com/event/hyrox-dublin/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'€',amount:140,note:'approx.'}},
+  {id:'dusseldorf',name:'HYROX Düsseldorf',city:'Düsseldorf',country:'Germany',region:'Europe',dates:'11–15 Nov 2026',start:'2026-11-11',end:'2026-11-15',venue:'Messe Düsseldorf',url:'https://hyrox.com/event/hyrox-dusseldorf/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'barcelona-nov',name:'HYROX Barcelona (Nov)',city:'Barcelona',country:'Spain',region:'Europe',dates:'12–15 Nov 2026',start:'2026-11-12',end:'2026-11-15',venue:'Fira de Barcelona',url:'https://hyrox.com/event/hyrox-barcelona-2/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'denver',name:'HYROX Denver',city:'Denver',country:'USA',region:'North America',dates:'12–15 Nov 2026',start:'2026-11-12',end:'2026-11-15',venue:'Colorado Convention Center',url:'https://hyrox.com/event/hyrox-denver/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'seoul',name:'AirAsia HYROX Seoul',city:'Seoul',country:'South Korea',region:'Asia',dates:'14–15 Nov 2026',start:'2026-11-14',end:'2026-11-15',venue:'COEX, Seoul',url:'https://hyrox.com/event/hyrox-seoul/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'dallas',name:'HYROX Dallas',city:'Dallas',country:'USA',region:'North America',dates:'18–22 Nov 2026',start:'2026-11-18',end:'2026-11-22',venue:'Kay Bailey Hutchison Convention Center',url:'https://hyrox.com/event/hyrox-dallas/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed'],staticPrice:null},
+  {id:'poznan',name:'HYROX Poznań',city:'Poznań',country:'Poland',region:'Europe',dates:'20–22 Nov 2026',start:'2026-11-20',end:'2026-11-22',venue:'MTP Poznań Expo',url:'https://hyrox.com/event/hyrox-poznan/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'utrecht',name:'HYROX Utrecht',city:'Utrecht',country:'Netherlands',region:'Europe',dates:'26–29 Nov 2026',start:'2026-11-26',end:'2026-11-29',venue:'Jaarbeurs Utrecht',url:'https://hyrox.com/event/hyrox-utrecht/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'johannesburg-nov',name:'Virgin Active HYROX Johannesburg (Nov)',city:'Johannesburg',country:'South Africa',region:'Africa',dates:'28–29 Nov 2026',start:'2026-11-28',end:'2026-11-29',venue:'Gallagher Convention Centre',url:'https://hyrox.com/event/virgin-active-hyrox-johannesburg-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'london-excel',name:'HYROX London ExCeL',city:'London',country:'United Kingdom',region:'UK',dates:'2–6 Dec 2026',start:'2026-12-02',end:'2026-12-06',venue:'ExCeL London, Royal Victoria Dock',url:'https://hyrox.com/event/hyrox-london-excel/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-men','doubles-women','doubles-mixed','relay-men','relay-women','relay-mixed','adaptive-men','adaptive-women'],staticPrice:{sym:'£',amount:100,note:'approx.'}},
+  {id:'anaheim',name:'HYROX Anaheim',city:'Anaheim',country:'USA',region:'North America',dates:'4–6 Dec 2026',start:'2026-12-04',end:'2026-12-06',venue:'Anaheim Convention Center',url:'https://hyrox.com/event/hyrox-anaheim-26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'milan',name:'HYROX Milan',city:'Milan',country:'Italy',region:'Europe',dates:'5–6 Dec 2026',start:'2026-12-05',end:'2026-12-06',venue:'Allianz MiCo, Milan',url:'https://hyrox.com/event/hyrox-milan/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'frankfurt',name:'Fitness First HYROX Frankfurt',city:'Frankfurt',country:'Germany',region:'Europe',dates:'10–13 Dec 2026',start:'2026-12-10',end:'2026-12-13',venue:'Messe Frankfurt',url:'https://hyrox.com/event/fitness-first-hyrox-frankfurt/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'nashville',name:'HYROX Nashville',city:'Nashville',country:'USA',region:'North America',dates:'10–13 Dec 2026',start:'2026-12-10',end:'2026-12-13',venue:'Music City Center, Nashville',url:'https://hyrox.com/event/hyrox-nashville/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'paris-dec',name:'Fitness Park HYROX Paris (Dec)',city:'Paris',country:'France',region:'Europe',dates:'12–20 Dec 2026',start:'2026-12-12',end:'2026-12-20',venue:'Paris Expo Porte de Versailles',url:'https://hyrox.com/event/hyrox-paris-s26-27/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','pro-men','pro-women','doubles-mixed'],staticPrice:null},
+  {id:'gent',name:'HYROX Gent',city:'Gent',country:'Belgium',region:'Europe',dates:'17–20 Dec 2026',start:'2026-12-17',end:'2026-12-20',venue:'Flanders Expo, Gent',url:'https://hyrox.com/event/hyrox-gent/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'helsinki-dec',name:'HYROX Helsinki (Dec)',city:'Helsinki',country:'Finland',region:'Europe',dates:'18–20 Dec 2026',start:'2026-12-18',end:'2026-12-20',venue:'Messukeskus Helsinki',url:'https://hyrox.com/event/hyrox-helsinki-2/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+  {id:'vancouver',name:'HYROX Vancouver',city:'Vancouver',country:'Canada',region:'North America',dates:'18–20 Dec 2026',start:'2026-12-18',end:'2026-12-20',venue:'Vancouver Convention Centre',url:'https://hyrox.com/event/hyrox-vancouver/',season:'26/27',type:'standard',divisions:['mens-open','womens-open','doubles-mixed'],staticPrice:null},
+];
+
+// ── Runtime state ─────────────────────────────────────────────────────────
+let availData = {};   // keyed by event id
+let sort = 'date';
+
+// ── Load availability.json ─────────────────────────────────────────────────
+async function loadAvailability() {
+  const dot  = document.getElementById('freshness-dot');
+  const text = document.getElementById('freshness-text');
+  try {
+    // cache-bust so we always get the latest file
+    const resp = await fetch(`availability.json?t=${Date.now()}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+
+    availData = json.events || {};
+
+    const scrapedAt = new Date(json.scraped_at);
+    const ageMin = Math.round((Date.now() - scrapedAt) / 60000);
+    const fresh  = ageMin <= 20;
+
+    dot.className  = 'dot' + (fresh ? '' : ' stale');
+    text.textContent = fresh
+      ? `Data updated ${ageMin < 1 ? 'just now' : ageMin + ' min ago'}`
+      : `Data last updated ${ageMin} min ago — may be stale`;
+
+  } catch (e) {
+    dot.className  = 'dot error';
+    text.textContent = 'Could not load availability — showing schedule only';
+    console.warn('availability.json not found or unreadable:', e.message);
+    console.warn('Run scraper.py to generate it.');
+  }
+  render();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function divStatus(eventId, divId) {
+  const ed = availData[eventId];
+  if (!ed || ed.status !== 'ok') return 'unknown';
+  return (ed.divisions[divId] || {}).status || 'unknown';
+}
+
+function eventBestPrice(event) {
+  // Prefer live price from scraper over static
+  const ed = availData[event.id];
+  if (ed && ed.status === 'ok') {
+    for (const div of event.divisions) {
+      const p = (ed.divisions[div] || {}).price;
+      if (p && p.amount) return p;
+    }
+  }
+  return event.staticPrice || null;
+}
+
+function formatPrice(p) {
+  if (!p) return null;
+  const SYMBOLS = {GBP:'£',EUR:'€',USD:'$',AUD:'A$',CAD:'C$',NZD:'NZ$',CHF:'CHF ',SEK:'kr',NOK:'kr',ZAR:'R',JPY:'¥',INR:'₹',BRL:'R$',MXN:'MX$',KRW:'₩',HKD:'HK$',IDR:'Rp'};
+  const sym = p.symbol || SYMBOLS[p.currency] || (p.currency ? p.currency+' ' : '');
+  const amt = typeof p.amount === 'number'
+    ? p.amount.toLocaleString(undefined,{maximumFractionDigits:0})
+    : p.amount;
+  return `${sym}${amt}`;
+}
+
+function hasSomeAvail(eventId) {
+  const ed = availData[eventId];
+  if (!ed || ed.status !== 'ok') return false;
+  return Object.values(ed.divisions).some(d => d.status === 'available' || d.status === 'limited');
+}
+
+// ── Filter & render ────────────────────────────────────────────────────────
+function reset() {
+  ['f-div','f-region','f-avail','f-month'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-show').value='upcoming';
+  render();
+}
+
+function setSort(s) {
+  sort=s;
+  ['date','price','city'].forEach(k=>document.getElementById('s-'+k).classList.toggle('active',k===s));
+  render();
+}
+
+function render() {
+  const dF = document.getElementById('f-div').value;
+  const rF = document.getElementById('f-region').value;
+  const aF = document.getElementById('f-avail').value;
+  const mF = document.getElementById('f-month').value;
+  const sF = document.getElementById('f-show').value;
+
+  let list = EVENTS.filter(e => {
+    if (sF==='upcoming' && new Date(e.end) < TODAY) return false;
+    if (rF && e.region!==rF) return false;
+    if (mF && e.start.slice(0,7)!==mF) return false;
+    if (dF && !e.divisions.includes(dF)) return false;
+    if (aF && dF) {
+      // Filter by avail status of the specific selected division
+      if (divStatus(e.id, dF) !== aF) return false;
+    } else if (aF) {
+      // Filter: at least one division matches the avail filter
+      const any = e.divisions.some(d => divStatus(e.id, d) === aF);
+      if (!any) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  if (sort==='date') list.sort((a,b)=>a.start.localeCompare(b.start));
+  else if (sort==='price') {
+    list.sort((a,b)=>{
+      const pa = eventBestPrice(a), pb = eventBestPrice(b);
+      const va = pa?pa.amount:Infinity, vb = pb?pb.amount:Infinity;
+      return va!==vb ? va-vb : a.start.localeCompare(b.start);
+    });
+  } else list.sort((a,b)=>a.city.localeCompare(b.city));
+
+  document.getElementById('count').innerHTML = list.length===0
+    ? 'No events found'
+    : `<strong>${list.length}</strong> event${list.length!==1?'s':''} found`;
+
+  document.getElementById('grid').innerHTML = list.length===0
+    ? `<div class="empty"><h3>No events match</h3><p>Try adjusting your filters.</p></div>`
+    : list.map(e => cardHtml(e, dF)).join('');
+}
+
+function cardHtml(e, hlDiv) {
+  const typePill = e.type==='world-champs' ? `<span class="pill pill-wc">World Champs</span>` : '';
+
+  // Division chips — show all, highlight the filtered one
+  const divsToShow = hlDiv ? e.divisions.filter(d=>d===hlDiv).concat(e.divisions.filter(d=>d!==hlDiv)) : e.divisions;
+  const chips = divsToShow.map(d => {
+    const st  = divStatus(e.id, d);
+    const lbl = DIVS[d] || d;
+    const cls = `chip chip-${st}${d===hlDiv?' hl':''}`;
+    return `<span class="${cls}"><span class="cdot"></span>${lbl}</span>`;
+  }).join('');
+
+  // Price
+  const livePrice = eventBestPrice(e);
+  const priceStr  = formatPrice(livePrice);
+  let priceHtml;
+  if (priceStr) {
+    const note = livePrice.note || (livePrice.currency ? `· ${livePrice.currency}` : '');
+    priceHtml = `<div class="price-block"><div class="price-label">From (per person)</div><div class="price-value">${priceStr}</div><div class="price-caveat">${note}</div></div>`;
+  } else {
+    priceHtml = `<div class="price-block"><div class="price-unknown">Price not yet listed</div></div>`;
+  }
+
+  return `<div class="card">
+    <div class="card-strip"><span class="pill pill-region">${e.region}</span><span class="pill pill-season">S${e.season}</span>${typePill}</div>
+    <div class="card-body"><div class="event-title">${e.name}</div><div class="event-info"><span class="dates">${e.dates}</span><span>${e.venue}</span></div></div>
+    <div class="card-divisions"><div class="div-heading">${hlDiv?'Matching division · all divisions':'Ticket availability by division'}</div><div class="div-chips">${chips}</div></div>
+    <div class="card-footer">${priceHtml}<a class="btn-book" href="${e.url}" target="_blank" rel="noopener">Buy tickets →</a></div>
+  </div>`;
+}
+
+['f-div','f-region','f-avail','f-month','f-show'].forEach(id=>document.getElementById(id).addEventListener('change',render));
+
+// Load availability then render
+loadAvailability();
+</script>
+</body>
+</html>
