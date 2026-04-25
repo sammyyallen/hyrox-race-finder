@@ -1,240 +1,354 @@
 {
-  "scraped_at": "2026-04-25T20:22:30.755300+00:00",
+  "scraped_at": "2026-04-25T20:46:27.167117+00:00",
   "poll_interval": 15,
   "events": {
     "cardiff": {
       "event_id": "cardiff",
-      "fetched_at": "2026-04-25T20:21:55.336001+00:00",
-      "url": "https://gb.hyrox.com/api/events/hyrox-cardiff-25-26-p7cgaq",
+      "fetched_at": "2026-04-25T20:46:27.166946+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "birmingham": {
       "event_id": "birmingham",
-      "fetched_at": "2026-04-25T20:21:56.379312+00:00",
-      "url": "https://gb.hyrox.com/api/events/hyrox-birmingham-26-27",
+      "fetched_at": "2026-04-25T20:46:27.166965+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "london-excel": {
       "event_id": "london-excel",
-      "fetched_at": "2026-04-25T20:21:57.655198+00:00",
-      "url": "https://gb.hyrox.com/api/events/hyrox-london-excel-26-27",
+      "fetched_at": "2026-04-25T20:46:27.166970+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "berlin": {
       "event_id": "berlin",
-      "fetched_at": "2026-04-25T20:21:58.645370+00:00",
-      "url": "https://da.hyrox.com/api/events/gillettelabs-hyrox-berlin-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.166973+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "hamburg": {
       "event_id": "hamburg",
-      "fetched_at": "2026-04-25T20:21:59.682304+00:00",
-      "url": "https://da.hyrox.com/api/events/intersport-hyrox-hamburg-26-27",
+      "fetched_at": "2026-04-25T20:46:27.166975+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "heerenveen": {
       "event_id": "heerenveen",
-      "fetched_at": "2026-04-25T20:22:00.670230+00:00",
-      "url": "https://benelux.hyrox.com/api/events/hyrox-heerenveen-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.166978+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
-    },
-    "amsterdam": {
-      "event_id": "amsterdam",
-      "fetched_at": "2026-04-25T20:22:01.987260+00:00",
-      "url": "https://benelux.hyrox.com/api/events/hyrox-amsterdam-season-25-26",
-      "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
-    },
-    "utrecht": {
-      "event_id": "utrecht",
-      "fetched_at": "2026-04-25T20:22:02.984030+00:00",
-      "url": "https://benelux.hyrox.com/api/events/hyrox-utrecht-26-27",
-      "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "maastricht": {
       "event_id": "maastricht",
-      "fetched_at": "2026-04-25T20:22:03.973493+00:00",
-      "url": "https://benelux.hyrox.com/api/events/hyrox-maastricht-26-27",
+      "fetched_at": "2026-04-25T20:46:27.166981+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "utrecht": {
+      "event_id": "utrecht",
+      "fetched_at": "2026-04-25T20:46:27.166984+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "riga": {
       "event_id": "riga",
-      "fetched_at": "2026-04-25T20:22:04.964612+00:00",
-      "url": "https://baltics.hyrox.com/api/events/lemon-gym-hyrox-riga-season-25-26",
-      "status": "error",
-      "error": "connection_error",
-      "divisions": {},
-      "raw_categories": []
+      "fetched_at": "2026-04-25T20:46:27.166986+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "barcelona-may": {
       "event_id": "barcelona-may",
-      "fetched_at": "2026-04-25T20:22:05.793979+00:00",
-      "url": "https://spain.hyrox.com/api/events/biotherm-hyrox-barcelona-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.166989+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "barcelona-nov": {
+      "event_id": "barcelona-nov",
+      "fetched_at": "2026-04-25T20:46:27.166992+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "valencia": {
+      "event_id": "valencia",
+      "fetched_at": "2026-04-25T20:46:27.166996+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "tenerife": {
+      "event_id": "tenerife",
+      "fetched_at": "2026-04-25T20:46:27.166998+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "lyon": {
       "event_id": "lyon",
-      "fetched_at": "2026-04-25T20:22:06.790607+00:00",
-      "url": "https://france.hyrox.com/api/events/creapure-hyrox-lyon-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.167001+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "bordeaux": {
+      "event_id": "bordeaux",
+      "fetched_at": "2026-04-25T20:46:27.167003+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "nice-oct": {
+      "event_id": "nice-oct",
+      "fetched_at": "2026-04-25T20:46:27.167006+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "paris-dec": {
       "event_id": "paris-dec",
-      "fetched_at": "2026-04-25T20:22:08.100953+00:00",
-      "url": "https://france.hyrox.com/api/events/fitness-park-hyrox-paris-s26-27",
+      "fetched_at": "2026-04-25T20:46:27.167009+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "lisboa": {
+      "event_id": "lisboa",
+      "fetched_at": "2026-04-25T20:46:27.167011+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "rimini": {
+      "event_id": "rimini",
+      "fetched_at": "2026-04-25T20:46:27.167014+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "rome": {
+      "event_id": "rome",
+      "fetched_at": "2026-04-25T20:46:27.167016+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "milan": {
+      "event_id": "milan",
+      "fetched_at": "2026-04-25T20:46:27.167019+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "frankfurt": {
+      "event_id": "frankfurt",
+      "fetched_at": "2026-04-25T20:46:27.167021+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "dusseldorf": {
+      "event_id": "dusseldorf",
+      "fetched_at": "2026-04-25T20:46:27.167024+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "karlsruhe": {
+      "event_id": "karlsruhe",
+      "fetched_at": "2026-04-25T20:46:27.167027+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "dublin": {
       "event_id": "dublin",
-      "fetched_at": "2026-04-25T20:22:09.094558+00:00",
-      "url": "https://ireland.hyrox.com/api/events/hyrox-dublin-26-27",
-      "status": "error",
-      "error": "Expecting value: line 1 column 1 (char 0)",
-      "divisions": {},
-      "raw_categories": []
+      "fetched_at": "2026-04-25T20:46:27.167030+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "geneva": {
+      "event_id": "geneva",
+      "fetched_at": "2026-04-25T20:46:27.167032+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "oslo": {
+      "event_id": "oslo",
+      "fetched_at": "2026-04-25T20:46:27.167035+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "helsinki-may": {
+      "event_id": "helsinki-may",
+      "fetched_at": "2026-04-25T20:46:27.167038+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "helsinki-dec": {
+      "event_id": "helsinki-dec",
+      "fetched_at": "2026-04-25T20:46:27.167040+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "gdansk": {
+      "event_id": "gdansk",
+      "fetched_at": "2026-04-25T20:46:27.167043+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "poznan": {
+      "event_id": "poznan",
+      "fetched_at": "2026-04-25T20:46:27.167045+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "gent": {
+      "event_id": "gent",
+      "fetched_at": "2026-04-25T20:46:27.167048+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "stockholm-wc": {
       "event_id": "stockholm-wc",
-      "fetched_at": "2026-04-25T20:22:18.824529+00:00",
-      "url": "https://worlds.hyrox.com/api/events/puma-hyrox-world-championships-stockholm",
+      "fetched_at": "2026-04-25T20:46:27.167050+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "new-york": {
       "event_id": "new-york",
-      "fetched_at": "2026-04-25T20:22:19.871807+00:00",
-      "url": "https://usa.hyrox.com/api/events/nyu-langone-health-hyrox-new-york-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.167053+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "washington": {
       "event_id": "washington",
-      "fetched_at": "2026-04-25T20:22:20.868666+00:00",
-      "url": "https://usa.hyrox.com/api/events/amazfit-hyrox-washington-dc-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167055+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "salt-lake-city": {
       "event_id": "salt-lake-city",
-      "fetched_at": "2026-04-25T20:22:21.853421+00:00",
-      "url": "https://usa.hyrox.com/api/events/inbody-hyrox-salt-lake-city-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167058+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "boston": {
       "event_id": "boston",
-      "fetched_at": "2026-04-25T20:22:22.845920+00:00",
-      "url": "https://usa.hyrox.com/api/events/hwpo-hyrox-boston-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167060+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "dallas": {
       "event_id": "dallas",
-      "fetched_at": "2026-04-25T20:22:23.839553+00:00",
-      "url": "https://usa.hyrox.com/api/events/hyrox-dallas-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167063+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "tampa": {
+      "event_id": "tampa",
+      "fetched_at": "2026-04-25T20:46:27.167066+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "denver": {
+      "event_id": "denver",
+      "fetched_at": "2026-04-25T20:46:27.167068+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "nashville": {
+      "event_id": "nashville",
+      "fetched_at": "2026-04-25T20:46:27.167071+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "anaheim": {
+      "event_id": "anaheim",
+      "fetched_at": "2026-04-25T20:46:27.167073+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "ottawa": {
       "event_id": "ottawa",
-      "fetched_at": "2026-04-25T20:22:24.829818+00:00",
-      "url": "https://canada.hyrox.com/api/events/goodlife-hyrox-ottawa-season-25-26",
-      "status": "error",
-      "error": "connection_error",
-      "divisions": {},
-      "raw_categories": []
+      "fetched_at": "2026-04-25T20:46:27.167076+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "toronto": {
       "event_id": "toronto",
-      "fetched_at": "2026-04-25T20:22:25.663147+00:00",
-      "url": "https://canada.hyrox.com/api/events/goodlife-hyrox-toronto-26-27",
-      "status": "error",
-      "error": "connection_error",
-      "divisions": {},
-      "raw_categories": []
+      "fetched_at": "2026-04-25T20:46:27.167079+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "vancouver": {
+      "event_id": "vancouver",
+      "fetched_at": "2026-04-25T20:46:27.167082+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "mexico-city": {
+      "event_id": "mexico-city",
+      "fetched_at": "2026-04-25T20:46:27.167085+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     },
     "sydney": {
       "event_id": "sydney",
-      "fetched_at": "2026-04-25T20:22:26.475423+00:00",
-      "url": "https://australia.hyrox.com/api/events/byd-hyrox-sydney-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167087+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "hong-kong": {
       "event_id": "hong-kong",
-      "fetched_at": "2026-04-25T20:22:27.795844+00:00",
-      "url": "https://hongkong.hyrox.com/api/events/cigna-hyrox-hong-kong-season-25-26",
+      "fetched_at": "2026-04-25T20:46:27.167090+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
-    },
-    "incheon": {
-      "event_id": "incheon",
-      "fetched_at": "2026-04-25T20:22:28.750528+00:00",
-      "url": "https://korea.hyrox.com/api/events/airasia-hyrox-incheon-season-25-26",
-      "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
     },
     "chiba": {
       "event_id": "chiba",
-      "fetched_at": "2026-04-25T20:22:29.750329+00:00",
-      "url": "https://japan.hyrox.com/api/events/airasia-hyrox-chiba-26-27",
+      "fetched_at": "2026-04-25T20:46:27.167092+00:00",
       "status": "not_on_sale",
-      "error": null,
-      "divisions": {},
-      "raw_categories": []
+      "divisions": {}
+    },
+    "incheon": {
+      "event_id": "incheon",
+      "fetched_at": "2026-04-25T20:46:27.167095+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "seoul": {
+      "event_id": "seoul",
+      "fetched_at": "2026-04-25T20:46:27.167097+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "hangzhou": {
+      "event_id": "hangzhou",
+      "fetched_at": "2026-04-25T20:46:27.167100+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "jakarta": {
+      "event_id": "jakarta",
+      "fetched_at": "2026-04-25T20:46:27.167102+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "delhi": {
+      "event_id": "delhi",
+      "fetched_at": "2026-04-25T20:46:27.167105+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "buenos-aires": {
+      "event_id": "buenos-aires",
+      "fetched_at": "2026-04-25T20:46:27.167107+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "johannesburg-may": {
+      "event_id": "johannesburg-may",
+      "fetched_at": "2026-04-25T20:46:27.167110+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "johannesburg-nov": {
+      "event_id": "johannesburg-nov",
+      "fetched_at": "2026-04-25T20:46:27.167112+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
+    },
+    "cape-town-aug": {
+      "event_id": "cape-town-aug",
+      "fetched_at": "2026-04-25T20:46:27.167115+00:00",
+      "status": "not_on_sale",
+      "divisions": {}
     }
   }
 }
