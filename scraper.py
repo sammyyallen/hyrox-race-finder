@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """
-HYROX Race Finder — Scraper v5
+HYROX Race Finder — Scraper v6
 ================================
-BREAKTHROUGH: The real vivenu API endpoint is:
-  https://vivenu.com/api/public/events/{EVENT_ID}/offers
+Confirmed working:
+  GET https://vivenu.com/api/public/events/{ID}/offers
+  → 200, response keys: ['bundles', 'products', 'entitlements']
+  → tickets are in response['entitlements']
 
-Where EVENT_ID is a 24-character hex string like 698272f225feb1c40eb86297.
-This is a PUBLIC endpoint — no auth needed.
-
-Strategy:
-1. For events where we know the ID, call the API directly.
-2. For others, visit the seller storefront event page (da.hyrox.com/event/slug)
-   and extract the 24-char hex event ID from the page source or network calls.
-3. Then call /api/public/events/{id}/offers to get ticket availability.
+For ID discovery, we search vivenu's public search API by event name
+which avoids needing to visit seller pages with unknown slugs.
 
 Run once:   python scraper.py --once
 Continuous: python scraper.py
@@ -44,11 +40,11 @@ TIMEOUT       = 15
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/html, */*",
+    "Accept": "application/json, */*",
     "Accept-Language": "en-GB,en;q=0.9",
+    "Origin": "https://gb.hyrox.com",
+    "Referer": "https://gb.hyrox.com/",
 }
-
-VIVENU_API = "https://vivenu.com/api/public/events/{id}/offers"
 
 # ── Division mapping ──────────────────────────────────────────────────────────
 
@@ -93,489 +89,244 @@ def normalise_division(name):
     return None
 
 
-def status_from_offer(offer):
+def status_from_entitlement(item):
     """
-    The /offers endpoint returns offer objects with availability info.
-    Fields vary but typically include: available, soldOut, status, amount.
+    Parse availability from a vivenu entitlement/ticket object.
+    The /offers endpoint returns entitlements with these fields.
     """
-    # Check explicit sold out flags
-    if offer.get("soldOut") or offer.get("isSoldOut"):
+    # Explicit sold out
+    if item.get("soldOut") or item.get("isSoldOut"):
         return "soldout"
 
-    status = (offer.get("status") or offer.get("availabilityStatus") or "").upper()
+    status = (item.get("status") or item.get("availabilityStatus") or "").upper()
     if status in ("SOLD_OUT", "SOLDOUT", "EXHAUSTED", "UNAVAILABLE"):
         return "soldout"
     if status in ("HIDDEN", "DRAFT", "INACTIVE"):
         return "hidden"
 
-    # Check numeric availability
-    available = offer.get("available") or offer.get("availableAmount") or offer.get("amount")
-    if isinstance(available, (int, float)):
-        if available <= 0:
-            return "soldout"
-        if available <= 20:
-            return "limited"
-
-    # Check active flag
-    if offer.get("active") is False:
+    # Active flag
+    if item.get("active") is False:
         return "hidden"
+
+    # Numeric availability — check several field names vivenu uses
+    for field in ("available", "availableAmount", "amount", "remainingQuantity", "quantity"):
+        val = item.get(field)
+        if isinstance(val, (int, float)):
+            if val <= 0:
+                return "soldout"
+            if val <= 20:
+                return "limited"
+            return "available"
 
     return "available"
 
 
 # ── Event registry ─────────────────────────────────────────────────────────────
-# vivenu_id: the 24-char hex ID from the /api/public/events/{id}/offers URL.
-#            Found by: opening the ticket page in browser → F12 → Network →
-#            look for a request to vivenu.com/api/public/events/XXXX/offers
+# vivenu_id: 24-char hex ID — hardcode these as you discover them.
 #
-# seller_url: fallback — the full URL of the event on the seller storefront
-#             (e.g. https://da.hyrox.com/event/gillettelabs-hyrox-berlin-...)
-#             The scraper will visit this page and extract the vivenu_id.
+# HOW TO FIND THE ID FOR ANY EVENT:
+#   1. Go to the event's ticket page (on da.hyrox.com, gb.hyrox.com, etc.)
+#   2. Open browser DevTools → Network → filter "Fetch/XHR"
+#   3. Refresh — look for a request to vivenu.com/api/public/events/XXXX/offers
+#   4. The XXXX is the vivenu_id — paste it below.
 #
-# HOW TO FIND THE vivenu_id FOR A NEW EVENT:
-#   1. Open the ticket page (e.g. da.hyrox.com/event/...)
-#   2. F12 → Network tab → filter "Fetch/XHR"  
-#   3. Refresh page → look for request to vivenu.com/api/public/events/XXXX/offers
-#   4. Copy the 24-char hex XXXX — that's the vivenu_id
-#
-# OR: View page source → Ctrl+F → search "api/public" or search for 24-char hex
+# search_terms: used to find the event via vivenu's search API as a fallback.
 
 EVENTS = [
     # ── UK ────────────────────────────────────────────────────────────────────
-    {
-        "id":         "cardiff",
-        "vivenu_id":  None,   # sold out / past — will be discovered or skipped
-        "seller_url": "https://gb.hyrox.com/event/hyrox-cardiff-25-26-p7cgaq",
-    },
-    {
-        "id":         "birmingham",
-        "vivenu_id":  None,
-        "seller_url": None,   # not yet on sale
-    },
-    {
-        "id":         "london-excel",
-        "vivenu_id":  None,
-        "seller_url": None,   # not yet on sale
-    },
+    # Cardiff is end of April — likely sold out / just finished
+    {"id": "cardiff",      "vivenu_id": None,                       "search": "hyrox cardiff 2026"},
+    {"id": "birmingham",   "vivenu_id": None,                       "search": "hyrox birmingham 2026"},
+    {"id": "london-excel", "vivenu_id": None,                       "search": "hyrox london excel 2026"},
 
     # ── Europe ────────────────────────────────────────────────────────────────
-    {
-        "id":         "berlin",
-        "vivenu_id":  "698272f225feb1c40eb86297",   # ✓ CONFIRMED from browser
-        "seller_url": None,
-    },
-    {
-        "id":         "hamburg",
-        "vivenu_id":  None,
-        "seller_url": "https://da.hyrox.com/event/intersport-hyrox-hamburg-26-27",
-    },
-    {
-        "id":         "heerenveen",
-        "vivenu_id":  None,
-        "seller_url": "https://benelux.hyrox.com/event/hyrox-heerenveen-season-25-26",
-    },
-    {
-        "id":         "maastricht",
-        "vivenu_id":  None,
-        "seller_url": "https://benelux.hyrox.com/event/hyrox-maastricht-26-27",
-    },
-    {
-        "id":         "utrecht",
-        "vivenu_id":  None,
-        "seller_url": "https://benelux.hyrox.com/event/hyrox-utrecht-26-27",
-    },
-    {
-        "id":         "gent",
-        "vivenu_id":  None,
-        "seller_url": "https://benelux.hyrox.com/event/hyrox-gent-26-27",
-    },
-    {
-        "id":         "riga",
-        "vivenu_id":  None,
-        "seller_url": "https://baltics.hyrox.com/event/lemon-gym-hyrox-riga-season-25-26",
-    },
-    {
-        "id":         "barcelona-may",
-        "vivenu_id":  None,
-        "seller_url": "https://spain.hyrox.com/event/biotherm-hyrox-barcelona-season-25-26",
-    },
-    {
-        "id":         "barcelona-nov",
-        "vivenu_id":  None,
-        "seller_url": "https://spain.hyrox.com/event/hyrox-barcelona-nov-26-27",
-    },
-    {
-        "id":         "valencia",
-        "vivenu_id":  None,
-        "seller_url": "https://spain.hyrox.com/event/hyrox-valencia-26-27",
-    },
-    {
-        "id":         "tenerife",
-        "vivenu_id":  None,
-        "seller_url": "https://spain.hyrox.com/event/hyrox-tenerife-26-27",
-    },
-    {
-        "id":         "lyon",
-        "vivenu_id":  None,
-        "seller_url": "https://france.hyrox.com/event/creapure-hyrox-lyon-season-25-26",
-    },
-    {
-        "id":         "bordeaux",
-        "vivenu_id":  None,
-        "seller_url": "https://france.hyrox.com/event/hyrox-bordeaux-s26-27",
-    },
-    {
-        "id":         "nice-oct",
-        "vivenu_id":  None,
-        "seller_url": "https://france.hyrox.com/event/hyrox-nice-s26-27",
-    },
-    {
-        "id":         "paris-dec",
-        "vivenu_id":  None,
-        "seller_url": "https://france.hyrox.com/event/fitness-park-hyrox-paris-s26-27",
-    },
-    {
-        "id":         "lisboa",
-        "vivenu_id":  None,
-        "seller_url": "https://portugal.hyrox.com/event/hyrox-lisboa-season-25-26",
-    },
-    {
-        "id":         "rimini",
-        "vivenu_id":  None,
-        "seller_url": "https://italy.hyrox.com/event/hyrox-rimini-season-25-26",
-    },
-    {
-        "id":         "rome",
-        "vivenu_id":  None,
-        "seller_url": "https://italy.hyrox.com/event/hyrox-rome-26-27",
-    },
-    {
-        "id":         "milan",
-        "vivenu_id":  None,
-        "seller_url": "https://italy.hyrox.com/event/hyrox-milan-26-27",
-    },
-    {
-        "id":         "frankfurt",
-        "vivenu_id":  None,
-        "seller_url": "https://da.hyrox.com/event/fitness-first-hyrox-frankfurt-26-27",
-    },
-    {
-        "id":         "dusseldorf",
-        "vivenu_id":  None,
-        "seller_url": "https://da.hyrox.com/event/hyrox-dusseldorf-26-27",
-    },
-    {
-        "id":         "karlsruhe",
-        "vivenu_id":  None,
-        "seller_url": "https://da.hyrox.com/event/hyrox-karlsruhe-26-27",
-    },
-    {
-        "id":         "dublin",
-        "vivenu_id":  None,
-        "seller_url": "https://ireland.hyrox.com/event/hyrox-dublin-26-27",
-    },
-    {
-        "id":         "geneva",
-        "vivenu_id":  None,
-        "seller_url": "https://switzerland.hyrox.com/event/hyrox-geneva-26-27",
-    },
-    {
-        "id":         "oslo",
-        "vivenu_id":  None,
-        "seller_url": "https://norway.hyrox.com/event/hyrox-oslo-26-27",
-    },
-    {
-        "id":         "helsinki-may",
-        "vivenu_id":  None,
-        "seller_url": "https://finland.hyrox.com/event/hyrox-helsinki-season-25-26",
-    },
-    {
-        "id":         "helsinki-dec",
-        "vivenu_id":  None,
-        "seller_url": "https://finland.hyrox.com/event/hyrox-helsinki-dec-26-27",
-    },
-    {
-        "id":         "gdansk",
-        "vivenu_id":  None,
-        "seller_url": "https://poland.hyrox.com/event/hyrox-gdansk-26-27",
-    },
-    {
-        "id":         "poznan",
-        "vivenu_id":  None,
-        "seller_url": "https://poland.hyrox.com/event/hyrox-poznan-26-27",
-    },
-    {
-        "id":         "stockholm-wc",
-        "vivenu_id":  None,
-        "seller_url": "https://worlds.hyrox.com/event/puma-hyrox-world-championships-stockholm",
-    },
+    # Berlin: CONFIRMED ID from browser network inspection
+    {"id": "berlin",       "vivenu_id": "698272f225feb1c40eb86297", "search": "hyrox berlin 2026"},
+    {"id": "hamburg",      "vivenu_id": None,                       "search": "hyrox hamburg 2026"},
+    {"id": "heerenveen",   "vivenu_id": None,                       "search": "hyrox heerenveen 2026"},
+    {"id": "maastricht",   "vivenu_id": None,                       "search": "hyrox maastricht 2026"},
+    {"id": "utrecht",      "vivenu_id": None,                       "search": "hyrox utrecht 2026"},
+    {"id": "gent",         "vivenu_id": None,                       "search": "hyrox gent 2026"},
+    {"id": "riga",         "vivenu_id": None,                       "search": "hyrox riga 2026"},
+    {"id": "barcelona-may","vivenu_id": None,                       "search": "hyrox barcelona 2026 may"},
+    {"id": "barcelona-nov","vivenu_id": None,                       "search": "hyrox barcelona 2026 november"},
+    {"id": "valencia",     "vivenu_id": None,                       "search": "hyrox valencia 2026"},
+    {"id": "tenerife",     "vivenu_id": None,                       "search": "hyrox tenerife 2026"},
+    {"id": "lyon",         "vivenu_id": None,                       "search": "hyrox lyon 2026"},
+    {"id": "bordeaux",     "vivenu_id": None,                       "search": "hyrox bordeaux 2026"},
+    {"id": "nice-oct",     "vivenu_id": None,                       "search": "hyrox nice 2026"},
+    {"id": "paris-dec",    "vivenu_id": None,                       "search": "hyrox paris 2026 december"},
+    {"id": "lisboa",       "vivenu_id": None,                       "search": "hyrox lisboa 2026"},
+    {"id": "rimini",       "vivenu_id": None,                       "search": "hyrox rimini 2026"},
+    {"id": "rome",         "vivenu_id": None,                       "search": "hyrox rome 2026"},
+    {"id": "milan",        "vivenu_id": None,                       "search": "hyrox milan 2026"},
+    {"id": "frankfurt",    "vivenu_id": None,                       "search": "hyrox frankfurt 2026"},
+    {"id": "dusseldorf",   "vivenu_id": None,                       "search": "hyrox dusseldorf 2026"},
+    {"id": "karlsruhe",    "vivenu_id": None,                       "search": "hyrox karlsruhe 2026"},
+    {"id": "dublin",       "vivenu_id": None,                       "search": "hyrox dublin 2026"},
+    {"id": "geneva",       "vivenu_id": None,                       "search": "hyrox geneva 2026"},
+    {"id": "oslo",         "vivenu_id": None,                       "search": "hyrox oslo 2026"},
+    {"id": "helsinki-may", "vivenu_id": None,                       "search": "hyrox helsinki 2026 may"},
+    {"id": "helsinki-dec", "vivenu_id": None,                       "search": "hyrox helsinki 2026 december"},
+    {"id": "gdansk",       "vivenu_id": None,                       "search": "hyrox gdansk 2026"},
+    {"id": "poznan",       "vivenu_id": None,                       "search": "hyrox poznan 2026"},
+    {"id": "stockholm-wc", "vivenu_id": None,                       "search": "hyrox world championships stockholm 2026"},
 
     # ── North America ─────────────────────────────────────────────────────────
-    {
-        "id":         "new-york",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/nyu-langone-health-hyrox-new-york-season-25-26",
-    },
-    {
-        "id":         "washington",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/amazfit-hyrox-washington-dc-26-27",
-    },
-    {
-        "id":         "salt-lake-city",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/inbody-hyrox-salt-lake-city-26-27",
-    },
-    {
-        "id":         "boston",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hwpo-hyrox-boston-26-27",
-    },
-    {
-        "id":         "dallas",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hyrox-dallas-26-27",
-    },
-    {
-        "id":         "tampa",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hyrox-tampa-26-27",
-    },
-    {
-        "id":         "denver",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hyrox-denver-26-27",
-    },
-    {
-        "id":         "nashville",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hyrox-nashville-26-27",
-    },
-    {
-        "id":         "anaheim",
-        "vivenu_id":  None,
-        "seller_url": "https://usa.hyrox.com/event/hyrox-anaheim-26-27",
-    },
-    {
-        "id":         "ottawa",
-        "vivenu_id":  None,
-        "seller_url": "https://canada.hyrox.com/event/goodlife-hyrox-ottawa-season-25-26",
-    },
-    {
-        "id":         "toronto",
-        "vivenu_id":  None,
-        "seller_url": "https://canada.hyrox.com/event/goodlife-hyrox-toronto-26-27",
-    },
-    {
-        "id":         "vancouver",
-        "vivenu_id":  None,
-        "seller_url": "https://canada.hyrox.com/event/hyrox-vancouver-26-27",
-    },
-    {
-        "id":         "mexico-city",
-        "vivenu_id":  None,
-        "seller_url": "https://mexico.hyrox.com/event/hyrox-mexico-city-26-27",
-    },
+    {"id": "new-york",       "vivenu_id": None, "search": "hyrox new york 2026"},
+    {"id": "washington",     "vivenu_id": None, "search": "hyrox washington 2026"},
+    {"id": "salt-lake-city", "vivenu_id": None, "search": "hyrox salt lake city 2026"},
+    {"id": "boston",         "vivenu_id": None, "search": "hyrox boston 2026"},
+    {"id": "dallas",         "vivenu_id": None, "search": "hyrox dallas 2026"},
+    {"id": "tampa",          "vivenu_id": None, "search": "hyrox tampa 2026"},
+    {"id": "denver",         "vivenu_id": None, "search": "hyrox denver 2026"},
+    {"id": "nashville",      "vivenu_id": None, "search": "hyrox nashville 2026"},
+    {"id": "anaheim",        "vivenu_id": None, "search": "hyrox anaheim 2026"},
+    {"id": "ottawa",         "vivenu_id": None, "search": "hyrox ottawa 2026"},
+    {"id": "toronto",        "vivenu_id": None, "search": "hyrox toronto 2026"},
+    {"id": "vancouver",      "vivenu_id": None, "search": "hyrox vancouver 2026"},
+    {"id": "mexico-city",    "vivenu_id": None, "search": "hyrox mexico city 2026"},
 
     # ── Asia-Pacific ──────────────────────────────────────────────────────────
-    {
-        "id":         "sydney",
-        "vivenu_id":  None,
-        "seller_url": "https://australia.hyrox.com/event/byd-hyrox-sydney-26-27",
-    },
-    {
-        "id":         "hong-kong",
-        "vivenu_id":  None,
-        "seller_url": "https://hongkong.hyrox.com/event/cigna-hyrox-hong-kong-season-25-26",
-    },
-    {
-        "id":         "chiba",
-        "vivenu_id":  None,
-        "seller_url": "https://japan.hyrox.com/event/airasia-hyrox-chiba-26-27",
-    },
-    {
-        "id":         "incheon",
-        "vivenu_id":  None,
-        "seller_url": "https://korea.hyrox.com/event/airasia-hyrox-incheon-season-25-26",
-    },
-    {
-        "id":         "seoul",
-        "vivenu_id":  None,
-        "seller_url": "https://korea.hyrox.com/event/airasia-hyrox-seoul-26-27",
-    },
-    {
-        "id":         "hangzhou",
-        "vivenu_id":  None,
-        "seller_url": "https://china.hyrox.com/event/hyrox-hangzhou-26-27",
-    },
-    {
-        "id":         "jakarta",
-        "vivenu_id":  None,
-        "seller_url": "https://indonesia.hyrox.com/event/airasia-hyrox-jakarta-26-27",
-    },
-    {
-        "id":         "delhi",
-        "vivenu_id":  None,
-        "seller_url": "https://india.hyrox.com/event/masters-union-hyrox-delhi-26-27",
-    },
+    {"id": "sydney",     "vivenu_id": None, "search": "hyrox sydney 2026"},
+    {"id": "hong-kong",  "vivenu_id": None, "search": "hyrox hong kong 2026"},
+    {"id": "chiba",      "vivenu_id": None, "search": "hyrox chiba 2026"},
+    {"id": "incheon",    "vivenu_id": None, "search": "hyrox incheon 2026"},
+    {"id": "seoul",      "vivenu_id": None, "search": "hyrox seoul 2026"},
+    {"id": "hangzhou",   "vivenu_id": None, "search": "hyrox hangzhou 2026"},
+    {"id": "jakarta",    "vivenu_id": None, "search": "hyrox jakarta 2026"},
+    {"id": "delhi",      "vivenu_id": None, "search": "hyrox delhi 2026"},
 
     # ── Latin America ─────────────────────────────────────────────────────────
-    {
-        "id":         "buenos-aires",
-        "vivenu_id":  None,
-        "seller_url": "https://latam.hyrox.com/event/hyrox-buenos-aires-season-25-26",
-    },
+    {"id": "buenos-aires", "vivenu_id": None, "search": "hyrox buenos aires 2026"},
 
     # ── Africa ────────────────────────────────────────────────────────────────
-    {
-        "id":         "johannesburg-may",
-        "vivenu_id":  None,
-        "seller_url": "https://africa.hyrox.com/event/virgin-active-hyrox-johannesburg-25-26",
-    },
-    {
-        "id":         "johannesburg-nov",
-        "vivenu_id":  None,
-        "seller_url": "https://africa.hyrox.com/event/virgin-active-hyrox-johannesburg-26-27",
-    },
-    {
-        "id":         "cape-town-aug",
-        "vivenu_id":  None,
-        "seller_url": "https://africa.hyrox.com/event/virgin-active-hyrox-cape-town-26-27",
-    },
+    {"id": "johannesburg-may", "vivenu_id": None, "search": "hyrox johannesburg 2026 may"},
+    {"id": "johannesburg-nov", "vivenu_id": None, "search": "hyrox johannesburg 2026 november"},
+    {"id": "cape-town-aug",    "vivenu_id": None, "search": "hyrox cape town 2026"},
 ]
 
 
-# ── ID discovery from seller page ─────────────────────────────────────────────
+# ── Vivenu search API — find event ID by name ─────────────────────────────────
 
-def discover_vivenu_id(seller_url):
+def search_vivenu_id(search_terms):
     """
-    Fetch the seller storefront event page and extract the 24-char hex
-    vivenu event ID. It appears in the page source in several places:
-    - As part of a URL like /api/public/events/XXXX
-    - In a JSON blob like {"eventId":"XXXX"}
-    - In a script tag
+    Try vivenu's public search endpoint to find an event by name.
+    Returns a 24-char hex ID or None.
     """
-    if not seller_url:
-        return None
-    try:
-        r = requests.get(seller_url, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
-        log.info(f"    Page fetch: {seller_url} → {r.status_code} ({len(r.content)} bytes)")
-        if r.status_code != 200:
-            return None
-        html = r.text
+    # vivenu has a public search/events endpoint used by their embed widget
+    urls = [
+        f"https://vivenu.com/api/public/search/events?q={requests.utils.quote(search_terms)}&top=5",
+        f"https://vivenu.com/api/public/events?q={requests.utils.quote(search_terms)}&top=5",
+        f"https://vivenu.com/api/events?q={requests.utils.quote(search_terms)}&top=5",
+    ]
 
-        # Pattern 1: appears in API URL references in JS/HTML
-        # e.g. /api/public/events/698272f225feb1c40eb86297
-        m = re.search(r'/api/public/events/([0-9a-f]{24})', html)
-        if m:
-            log.info(f"    Found vivenu ID via API URL pattern: {m.group(1)}")
-            return m.group(1)
+    for url in urls:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+            log.info(f"    Search: {url} → {r.status_code} ({len(r.content)} bytes)")
+            if r.status_code != 200:
+                continue
+            try:
+                data = r.json()
+            except Exception:
+                continue
 
-        # Pattern 2: eventId or _id in JSON
-        m = re.search(r'"(?:eventId|_id|vivenuId)"\s*:\s*"([0-9a-f]{24})"', html)
-        if m:
-            log.info(f"    Found vivenu ID via JSON key: {m.group(1)}")
-            return m.group(1)
+            # Extract IDs from response
+            docs = []
+            if isinstance(data, list):
+                docs = data
+            elif isinstance(data, dict):
+                docs = data.get("docs") or data.get("events") or data.get("results") or []
 
-        # Pattern 3: any 24-char hex string (broader fallback)
-        matches = re.findall(r'\b([0-9a-f]{24})\b', html)
-        if matches:
-            # Take the most frequent one (likely the event ID)
-            from collections import Counter
-            most_common = Counter(matches).most_common(1)[0][0]
-            log.info(f"    Found vivenu ID via hex pattern (most common): {most_common}")
-            return most_common
+            if docs:
+                event_id = docs[0].get("_id") or docs[0].get("id") or docs[0].get("eventId")
+                if event_id and re.match(r'^[0-9a-f]{24}$', str(event_id)):
+                    log.info(f"    Found via search: {event_id}")
+                    return event_id
+        except Exception as e:
+            log.debug(f"    Search error: {e}")
 
-        log.info(f"    No vivenu ID found in page source")
-        return None
-
-    except Exception as e:
-        log.warning(f"    Error fetching {seller_url}: {e}")
-        return None
+    return None
 
 
-# ── Fetch offers from vivenu public API ───────────────────────────────────────
+# ── Fetch and parse offers ────────────────────────────────────────────────────
 
-def fetch_offers(vivenu_id):
+def fetch_and_parse(vivenu_id, event_id):
     """
-    Call the confirmed public endpoint:
-    https://vivenu.com/api/public/events/{id}/offers
-    Returns the JSON response or None.
+    Call /api/public/events/{id}/offers and parse the entitlements.
+    Returns dict of {division_id: {status, price}} or None on error.
     """
-    url = VIVENU_API.format(id=vivenu_id)
+    url = f"https://vivenu.com/api/public/events/{vivenu_id}/offers"
     try:
         r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-        log.info(f"    Offers API: {url} → {r.status_code} ({len(r.content)} bytes)")
+        log.info(f"    Offers: {url} → {r.status_code} ({len(r.content)} bytes)")
         if r.status_code != 200:
             return None
-        try:
-            data = r.json()
-            log.info(f"    Response keys: {list(data.keys()) if isinstance(data, dict) else 'list[' + str(len(data)) + ']'}")
-            return data
-        except Exception:
-            preview = r.text[:300].replace('\n', ' ')
-            log.info(f"    Not JSON: {preview!r}")
-            return None
+        data = r.json()
     except Exception as e:
-        log.warning(f"    Offers API error: {e}")
+        log.warning(f"    Error: {e}")
         return None
 
+    log.info(f"    Response keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
 
-# ── Parse offers response into divisions ──────────────────────────────────────
-
-def parse_offers(data):
-    """
-    Parse the /offers response into {division_id: {status, price}}.
-    The response structure may vary — we handle several shapes.
-    """
-    if data is None:
-        return {}
-
-    # Gather all offer/ticket items into a flat list
+    # ── CONFIRMED: tickets live in data['entitlements'] ──────────────────────
     items = []
-    if isinstance(data, list):
+    if isinstance(data, dict):
+        # Try all known keys in priority order
+        for key in ("entitlements", "tickets", "offers", "ticketTypes", "docs", "data"):
+            candidate = data.get(key) or []
+            if candidate:
+                log.info(f"    Using key '{key}' with {len(candidate)} items")
+                items = candidate
+                break
+        # Also check groups
+        if not items:
+            for group in (data.get("groups") or []):
+                items.extend(group.get("entitlements") or group.get("tickets") or [])
+    elif isinstance(data, list):
         items = data
-    elif isinstance(data, dict):
-        # Try common keys
-        items = (
-            data.get("offers") or
-            data.get("tickets") or
-            data.get("ticketTypes") or
-            data.get("docs") or
-            data.get("data") or
-            []
-        )
-        # Also check nested under groups
-        for group in data.get("groups") or []:
-            items.extend(group.get("tickets") or group.get("offers") or [])
 
     if not items:
-        log.info(f"    No items found in offers response")
+        log.info(f"    No ticket items found — logging full response structure:")
+        log.info(f"    {json.dumps(data, default=str)[:500]}")
         return {}
 
-    log.info(f"    Parsing {len(items)} offer items")
-
+    log.info(f"    Parsing {len(items)} items")
     div_best  = {}
     div_price = {}
 
     for item in items:
-        name = item.get("name") or item.get("title") or ""
-        div  = normalise_division(name)
+        # entitlements may have the name nested under ticketType or directly
+        name = (
+            item.get("name") or
+            item.get("title") or
+            (item.get("ticketType") or {}).get("name") or
+            ""
+        )
+
+        div = normalise_division(name)
         if div is None:
             continue
 
-        st = status_from_offer(item)
+        st = status_from_entitlement(item)
         if st == "hidden":
             continue
 
         if div not in div_best or STATUS_RANK.get(st, 2) < STATUS_RANK.get(div_best[div], 2):
             div_best[div] = st
-            price = item.get("price") or item.get("basePrice") or item.get("gross")
-            currency = item.get("currency") or ""
+            # Price can be at top level or nested
+            price = (
+                item.get("price") or
+                item.get("basePrice") or
+                item.get("gross") or
+                (item.get("ticketType") or {}).get("price")
+            )
+            currency = item.get("currency") or (item.get("ticketType") or {}).get("currency") or ""
             if price is not None:
                 div_price[div] = {"amount": price, "currency": currency}
 
-    log.info(f"    → {len(div_best)} divisions found: {list(div_best.keys())}")
+    log.info(f"    → {len(div_best)} divisions: {list(div_best.keys())}")
     return {
         div: {"status": st, "price": div_price.get(div)}
         for div, st in div_best.items()
@@ -585,23 +336,22 @@ def parse_offers(data):
 # ── Main scrape ───────────────────────────────────────────────────────────────
 
 def run_scrape():
-    log.info(f"── Scrape v5 starting ({len(EVENTS)} events) ──")
+    log.info(f"── Scrape v6 starting ({len(EVENTS)} events) ──")
     results = {}
 
     for event in EVENTS:
         event_id  = event["id"]
         vivenu_id = event.get("vivenu_id")
-        seller_url = event.get("seller_url")
 
         log.info(f"  [{event_id}]")
 
-        # Step 1: get vivenu ID if we don't have it hardcoded
-        if not vivenu_id and seller_url:
-            vivenu_id = discover_vivenu_id(seller_url)
+        # Discover vivenu ID if not hardcoded
+        if not vivenu_id:
+            vivenu_id = search_vivenu_id(event.get("search", event_id))
             time.sleep(0.5)
 
         if not vivenu_id:
-            log.info(f"  [{event_id}]: No vivenu ID — skipping (not yet on sale)")
+            log.info(f"  [{event_id}]: No ID found — not yet on sale")
             results[event_id] = {
                 "event_id":   event_id,
                 "fetched_at": datetime.now(timezone.utc).isoformat(),
@@ -610,11 +360,11 @@ def run_scrape():
             }
             continue
 
-        # Step 2: fetch offers
-        data = fetch_offers(vivenu_id)
+        # Fetch and parse
+        divisions = fetch_and_parse(vivenu_id, event_id)
         time.sleep(0.5)
 
-        if data is None:
+        if divisions is None:
             results[event_id] = {
                 "event_id":   event_id,
                 "fetched_at": datetime.now(timezone.utc).isoformat(),
@@ -622,18 +372,15 @@ def run_scrape():
                 "vivenu_id":  vivenu_id,
                 "divisions":  {},
             }
-            continue
-
-        # Step 3: parse
-        divisions = parse_offers(data)
-        results[event_id] = {
-            "event_id":   event_id,
-            "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "status":     "ok",
-            "vivenu_id":  vivenu_id,
-            "divisions":  divisions,
-        }
-        log.info(f"  [{event_id}]: ✓ {len(divisions)} divisions")
+        else:
+            results[event_id] = {
+                "event_id":   event_id,
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
+                "status":     "ok",
+                "vivenu_id":  vivenu_id,
+                "divisions":  divisions,
+            }
+            log.info(f"  [{event_id}]: ✓ {len(divisions)} divisions")
 
     output = {
         "scraped_at":    datetime.now(timezone.utc).isoformat(),
