@@ -1,0 +1,35 @@
+name: HYROX Availability Scraper
+
+on:
+  schedule:
+    - cron: "0,15,30,45 * * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run scraper
+        run: python scraper.py --once
+
+      - name: Commit updated availability.json
+        run: |
+          git config user.name  "hyrox-scraper[bot]"
+          git config user.email "scraper@users.noreply.github.com"
+          git add availability.json
+          git diff --staged --quiet || git commit -m "Update availability"
+          git push
