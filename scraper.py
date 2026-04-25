@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 """
-HYROX Race Finder — Scraper v8
-================================
-The /offers endpoint only returns flex add-ons, not race tickets.
+HYROX Race Finder — Scraper v9 (Production)
+=============================================
+CONFIRMED working endpoint:
+  GET https://vivenu.com/api/public/events/{ID}
+  → data['tickets'] = list of ticket objects
+  → ticket names like 'HYROX MEN | Friday, 22 May 2026'
+  → Berlin confirmed: 14 divisions from 165 tickets ✓
 
-This version tries all plausible vivenu public endpoints for Berlin
-to find where the actual ticket types (Men's Open, Women's Open etc.) live,
-then logs the full response structure so we can parse correctly.
+Also confirmed: /shop endpoint has same tickets[] with availability data.
+
+HOW TO ADD A NEW EVENT ID:
+  1. Go to the event ticket page (e.g. da.hyrox.com/event/...)
+  2. Open DevTools → Network → Fetch/XHR → refresh the page
+  3. Look for a request to: vivenu.com/api/public/events/XXXX (615kb+)
+     OR: vivenu.com/api/public/events/XXXX/offers
+  4. Copy the 24-char hex XXXX
+  5. Paste it as vivenu_id below and re-deploy
 
 Run once:   python scraper.py --once
+Continuous: python scraper.py
 """
 
 import requests
@@ -32,7 +43,7 @@ log = logging.getLogger(__name__)
 
 OUTPUT_FILE   = Path(__file__).parent / "availability.json"
 POLL_INTERVAL = 15
-TIMEOUT       = 15
+TIMEOUT       = 20
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -68,9 +79,9 @@ DIVISION_PATTERNS = [
 ]
 
 SKIP_WORDS = [
-    "SPECTATOR","ZUSCHAUER","VOLUNTEER","PHOTO","PARKING",
-    "FLEX","ADD-ON","ADDON","YOUNGSTAR","CORPORATE","CHARITY",
-    "MERCHANDISE","COACH","SUPPORTER","GUEST","LITE",
+    "SPECTATOR", "ZUSCHAUER", "VOLUNTEER", "PHOTO", "PARKING",
+    "FLEX", "ADD-ON", "ADDON", "YOUNGSTAR", "CORPORATE", "CHARITY",
+    "MERCHANDISE", "COACH", "SUPPORTER", "GUEST", "LITE",
 ]
 
 STATUS_RANK = {"available": 0, "limited": 1, "soldout": 2}
@@ -86,36 +97,80 @@ def normalise_division(name):
     return None
 
 
-def status_from_item(item):
-    if item.get("soldOut") or item.get("isSoldOut"):
+def status_from_ticket(ticket):
+    """
+    Determine availability from a vivenu ticket object.
+    Key fields: amount (remaining), active, soldOut, status
+    """
+    if not ticket.get("active", True):
+        return "hidden"
+    if ticket.get("soldOut") or ticket.get("isSoldOut"):
         return "soldout"
-    status = (item.get("status") or item.get("availabilityStatus") or "").upper()
-    if status in ("SOLD_OUT", "SOLDOUT", "EXHAUSTED", "UNAVAILABLE"):
+    status = (ticket.get("status") or "").upper()
+    if status in ("SOLD_OUT", "SOLDOUT", "EXHAUSTED"):
         return "soldout"
     if status in ("HIDDEN", "DRAFT", "INACTIVE"):
         return "hidden"
-    if item.get("active") is False:
-        return "hidden"
-    for field in ("available", "availableAmount", "amount", "remainingQuantity", "stock"):
-        val = item.get(field)
-        if isinstance(val, (int, float)):
-            if val <= 0:
-                return "soldout"
-            if val <= 20:
-                return "limited"
-            return "available"
+    # amount = remaining ticket count
+    amount = ticket.get("amount")
+    if isinstance(amount, (int, float)):
+        if amount <= 0:
+            return "soldout"
+        if amount <= 20:
+            return "limited"
+        return "available"
     return "available"
 
 
-# ── Known IDs ────────────────────────────────────────────────────────────────
-BERLIN_ID = "698272f225feb1c40eb86297"
+def extract_divisions(tickets, currency=""):
+    """
+    Convert a list of vivenu ticket objects into our division structure.
+    Groups wave-day tickets by division, keeping the best (most available) status.
+    e.g. 'HYROX MEN | Friday' + 'HYROX MEN | Saturday' → mens-open: available
+    """
+    div_best  = {}
+    div_price = {}
 
-# All events — IDs to be filled in as we discover them
+    for ticket in tickets:
+        name = ticket.get("name") or ""
+        div  = normalise_division(name)
+        if div is None:
+            continue
+
+        st = status_from_ticket(ticket)
+        if st == "hidden":
+            continue
+
+        # Keep the best status across all wave days for this division
+        current_rank = STATUS_RANK.get(div_best.get(div, "soldout"), 2)
+        new_rank     = STATUS_RANK.get(st, 2)
+        if div not in div_best or new_rank < current_rank:
+            div_best[div] = st
+            price = ticket.get("price")
+            cur   = ticket.get("currency") or currency
+            if price is not None:
+                div_price[div] = {"amount": price, "currency": cur}
+
+    return {
+        div: {"status": st, "price": div_price.get(div)}
+        for div, st in div_best.items()
+    }
+
+
+# ── Event registry ─────────────────────────────────────────────────────────────
+# Add vivenu_id values as you discover them via browser DevTools.
+# Instructions: open ticket page → F12 → Network → Fetch/XHR → refresh →
+# find request to vivenu.com/api/public/events/XXXX → copy the 24-char hex XXXX.
+
 EVENTS = [
+    # ─── UK ──────────────────────────────────────────────────────────────────
+    # Cardiff: race is 29 Apr–4 May — sold out. Check after Birmingham goes on sale.
     {"id": "cardiff",          "vivenu_id": None},
-    {"id": "birmingham",       "vivenu_id": None},
-    {"id": "london-excel",     "vivenu_id": None},
-    {"id": "berlin",           "vivenu_id": BERLIN_ID},
+    {"id": "birmingham",       "vivenu_id": None},   # not yet on sale
+    {"id": "london-excel",     "vivenu_id": None},   # not yet on sale
+
+    # ─── Europe ───────────────────────────────────────────────────────────────
+    {"id": "berlin",           "vivenu_id": "698272f225feb1c40eb86297"},  # ✓ confirmed
     {"id": "hamburg",          "vivenu_id": None},
     {"id": "heerenveen",       "vivenu_id": None},
     {"id": "maastricht",       "vivenu_id": None},
@@ -145,6 +200,8 @@ EVENTS = [
     {"id": "gdansk",           "vivenu_id": None},
     {"id": "poznan",           "vivenu_id": None},
     {"id": "stockholm-wc",     "vivenu_id": None},
+
+    # ─── North America ────────────────────────────────────────────────────────
     {"id": "new-york",         "vivenu_id": None},
     {"id": "washington",       "vivenu_id": None},
     {"id": "salt-lake-city",   "vivenu_id": None},
@@ -158,6 +215,8 @@ EVENTS = [
     {"id": "toronto",          "vivenu_id": None},
     {"id": "vancouver",        "vivenu_id": None},
     {"id": "mexico-city",      "vivenu_id": None},
+
+    # ─── Asia-Pacific ─────────────────────────────────────────────────────────
     {"id": "sydney",           "vivenu_id": None},
     {"id": "hong-kong",        "vivenu_id": None},
     {"id": "chiba",            "vivenu_id": None},
@@ -166,136 +225,58 @@ EVENTS = [
     {"id": "hangzhou",         "vivenu_id": None},
     {"id": "jakarta",          "vivenu_id": None},
     {"id": "delhi",            "vivenu_id": None},
+
+    # ─── Latin America ────────────────────────────────────────────────────────
     {"id": "buenos-aires",     "vivenu_id": None},
+
+    # ─── Africa ───────────────────────────────────────────────────────────────
     {"id": "johannesburg-may", "vivenu_id": None},
     {"id": "johannesburg-nov", "vivenu_id": None},
     {"id": "cape-town-aug",    "vivenu_id": None},
 ]
 
 
-# ── Endpoint discovery for Berlin ─────────────────────────────────────────────
+# ── Fetch and parse one event ─────────────────────────────────────────────────
 
-def probe_berlin_endpoints():
+def fetch_event(vivenu_id, event_id):
     """
-    Try every plausible vivenu endpoint for Berlin to find where
-    the actual ticket types live. Log the full response for each hit.
+    Fetch the vivenu event object and extract ticket availability.
+    Primary: GET https://vivenu.com/api/public/events/{id}  (tickets[] field)
+    Fallback: GET https://vivenu.com/api/public/events/{id}/shop (also has tickets[])
     """
-    vid = BERLIN_ID
-    endpoints = [
-        f"https://vivenu.com/api/public/events/{vid}",
-        f"https://vivenu.com/api/public/events/{vid}/tickets",
-        f"https://vivenu.com/api/public/events/{vid}/ticketTypes",
-        f"https://vivenu.com/api/public/events/{vid}/ticket-types",
-        f"https://vivenu.com/api/public/events/{vid}/categories",
-        f"https://vivenu.com/api/public/events/{vid}/priceCategories",
-        f"https://vivenu.com/api/public/events/{vid}/price-categories",
-        f"https://vivenu.com/api/public/events/{vid}/checkout",
-        f"https://vivenu.com/api/public/events/{vid}/shop",
-        f"https://da.hyrox.com/api/public/events/{vid}",
-        f"https://da.hyrox.com/api/public/events/{vid}/offers",
-        f"https://da.hyrox.com/api/public/events/{vid}/tickets",
-        f"https://da.hyrox.com/api/events/{vid}",
-        f"https://da.hyrox.com/api/events/{vid}/tickets",
-    ]
-
-    log.info(f"── Probing {len(endpoints)} endpoints for Berlin ──")
-    for url in endpoints:
+    for url in [
+        f"https://vivenu.com/api/public/events/{vivenu_id}",
+        f"https://vivenu.com/api/public/events/{vivenu_id}/shop",
+    ]:
         try:
             r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-            size = len(r.content)
-            log.info(f"  {r.status_code} ({size:6d} bytes)  {url}")
-            if r.status_code == 200 and size > 100:
-                try:
-                    data = r.json()
-                    # Log top-level structure
-                    if isinstance(data, dict):
-                        keys = list(data.keys())
-                        log.info(f"    Keys: {keys}")
-                        # Look for anything that might be ticket types
-                        for k in keys:
-                            v = data[k]
-                            if isinstance(v, list) and len(v) > 0:
-                                first = v[0]
-                                if isinstance(first, dict):
-                                    name = first.get("name", "")
-                                    log.info(f"    {k}[0].name = {name!r}  (list of {len(v)})")
-                    elif isinstance(data, list) and len(data) > 0:
-                        first = data[0]
-                        if isinstance(first, dict):
-                            name = first.get("name", "")
-                            log.info(f"    list[0].name = {name!r}  (list of {len(data)})")
-                except Exception:
-                    log.info(f"    Not JSON or parse error")
-        except Exception as e:
-            log.info(f"  ERR  {url}: {e}")
-        time.sleep(0.3)
-
-
-# ── Parse tickets from event data (once we know which endpoint works) ─────────
-
-def extract_divisions(items, currency=""):
-    """Extract division availability from a flat list of ticket/offer items."""
-    div_best  = {}
-    div_price = {}
-
-    for item in items:
-        name = item.get("name") or item.get("title") or ""
-        div  = normalise_division(name)
-        if div is None:
-            continue
-        st = status_from_item(item)
-        if st == "hidden":
-            continue
-        if div not in div_best or STATUS_RANK.get(st, 2) < STATUS_RANK.get(div_best[div], 2):
-            div_best[div] = st
-            price = item.get("price") or item.get("basePrice") or item.get("gross")
-            cur   = item.get("currency") or currency
-            if price is not None:
-                div_price[div] = {"amount": price, "currency": cur}
-
-    return {
-        div: {"status": st, "price": div_price.get(div)}
-        for div, st in div_best.items()
-    }
-
-
-def fetch_event(vivenu_id):
-    """
-    Fetch ticket availability for a known vivenu event ID.
-    Tries the event endpoint directly (which should include tickets[]).
-    """
-    # Primary: the event object itself should have tickets[]
-    url = f"https://vivenu.com/api/public/events/{vivenu_id}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-        log.info(f"    Event endpoint: {r.status_code} ({len(r.content)} bytes)")
-        if r.status_code == 200:
+            log.info(f"    {url} → {r.status_code} ({len(r.content)} bytes)")
+            if r.status_code != 200:
+                continue
             data = r.json()
-            currency = data.get("currency", "") if isinstance(data, dict) else ""
-            # Try tickets[] directly on event
+            if not isinstance(data, dict):
+                continue
+
             tickets = data.get("tickets") or []
             if tickets:
-                log.info(f"    Found {len(tickets)} tickets on event object")
-                return extract_divisions(tickets, currency)
-            # Fall through to other keys
-            for key in ("ticketTypes", "categories", "priceCategories"):
-                items = data.get(key) or []
-                if items:
-                    log.info(f"    Found {len(items)} items under '{key}'")
-                    return extract_divisions(items, currency)
-    except Exception as e:
-        log.warning(f"    Event endpoint error: {e}")
+                currency = data.get("currency", "")
+                divisions = extract_divisions(tickets, currency)
+                log.info(f"    {len(tickets)} tickets → {len(divisions)} divisions: {list(divisions.keys())}")
+                return divisions
 
+        except Exception as e:
+            log.warning(f"    Error fetching {url}: {e}")
+
+    log.warning(f"    [{event_id}]: No ticket data found")
     return {}
 
 
 # ── Main scrape ───────────────────────────────────────────────────────────────
 
 def run_scrape():
-    # Always probe Berlin first to find the correct endpoint
-    probe_berlin_endpoints()
-
-    log.info(f"\n── Main scrape starting ({len(EVENTS)} events) ──")
+    known = [e for e in EVENTS if e.get("vivenu_id")]
+    log.info(f"── Scrape v9 starting — {len(known)} events with IDs, "
+             f"{len(EVENTS)-len(known)} pending ──")
     results = {}
 
     for event in EVENTS:
@@ -311,9 +292,9 @@ def run_scrape():
             }
             continue
 
-        log.info(f"  [{event_id}] vivenu_id={vivenu_id}")
-        divisions = fetch_event(vivenu_id)
-        time.sleep(0.8)
+        log.info(f"  [{event_id}]")
+        divisions = fetch_event(vivenu_id, event_id)
+        time.sleep(1.0)  # polite rate limiting
 
         results[event_id] = {
             "event_id":   event_id,
@@ -330,8 +311,10 @@ def run_scrape():
         "events":        results,
     }
     OUTPUT_FILE.write_text(json.dumps(output, indent=2))
-    ok = sum(1 for v in results.values() if v.get("status") == "ok")
-    log.info(f"── Done: {ok} with vivenu IDs ──\n")
+
+    ok      = sum(1 for v in results.values() if v.get("status") == "ok")
+    no_sale = sum(1 for v in results.values() if v.get("status") == "not_on_sale")
+    log.info(f"── Done: {ok} live, {no_sale} pending IDs ──\n")
 
 
 def main():
