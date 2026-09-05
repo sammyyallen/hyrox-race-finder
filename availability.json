@@ -1,353 +1,353 @@
 {
-  "scraped_at": "2026-09-05T05:27:01.034475+00:00",
+  "scraped_at": "2026-09-05T09:15:44.014784+00:00",
   "poll_interval": 15,
   "events": {
     "cardiff": {
       "event_id": "cardiff",
-      "fetched_at": "2026-09-05T05:26:59.713542+00:00",
+      "fetched_at": "2026-09-05T09:15:42.635594+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "birmingham": {
       "event_id": "birmingham",
-      "fetched_at": "2026-09-05T05:26:59.713556+00:00",
+      "fetched_at": "2026-09-05T09:15:42.635612+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "london-excel": {
       "event_id": "london-excel",
-      "fetched_at": "2026-09-05T05:26:59.713561+00:00",
+      "fetched_at": "2026-09-05T09:15:42.635616+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "berlin": {
       "event_id": "berlin",
-      "fetched_at": "2026-09-05T05:27:01.033786+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014002+00:00",
       "status": "ok",
       "vivenu_id": "698272f225feb1c40eb86297",
       "divisions": {}
     },
     "hamburg": {
       "event_id": "hamburg",
-      "fetched_at": "2026-09-05T05:27:01.034238+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014598+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "heerenveen": {
       "event_id": "heerenveen",
-      "fetched_at": "2026-09-05T05:27:01.034249+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014607+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "maastricht": {
       "event_id": "maastricht",
-      "fetched_at": "2026-09-05T05:27:01.034256+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014612+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "utrecht": {
       "event_id": "utrecht",
-      "fetched_at": "2026-09-05T05:27:01.034262+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014616+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "gent": {
       "event_id": "gent",
-      "fetched_at": "2026-09-05T05:27:01.034268+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014619+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "riga": {
       "event_id": "riga",
-      "fetched_at": "2026-09-05T05:27:01.034273+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014622+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "barcelona-may": {
       "event_id": "barcelona-may",
-      "fetched_at": "2026-09-05T05:27:01.034279+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014625+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "barcelona-nov": {
       "event_id": "barcelona-nov",
-      "fetched_at": "2026-09-05T05:27:01.034285+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014629+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "valencia": {
       "event_id": "valencia",
-      "fetched_at": "2026-09-05T05:27:01.034290+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014633+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "tenerife": {
       "event_id": "tenerife",
-      "fetched_at": "2026-09-05T05:27:01.034295+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014636+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "lyon": {
       "event_id": "lyon",
-      "fetched_at": "2026-09-05T05:27:01.034300+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014640+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "bordeaux": {
       "event_id": "bordeaux",
-      "fetched_at": "2026-09-05T05:27:01.034305+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014643+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "nice-oct": {
       "event_id": "nice-oct",
-      "fetched_at": "2026-09-05T05:27:01.034309+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014646+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "paris-dec": {
       "event_id": "paris-dec",
-      "fetched_at": "2026-09-05T05:27:01.034314+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014649+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "lisboa": {
       "event_id": "lisboa",
-      "fetched_at": "2026-09-05T05:27:01.034318+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014652+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "rimini": {
       "event_id": "rimini",
-      "fetched_at": "2026-09-05T05:27:01.034323+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014655+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "rome": {
       "event_id": "rome",
-      "fetched_at": "2026-09-05T05:27:01.034328+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014658+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "milan": {
       "event_id": "milan",
-      "fetched_at": "2026-09-05T05:27:01.034333+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014661+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "frankfurt": {
       "event_id": "frankfurt",
-      "fetched_at": "2026-09-05T05:27:01.034339+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014665+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "dusseldorf": {
       "event_id": "dusseldorf",
-      "fetched_at": "2026-09-05T05:27:01.034344+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014668+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "karlsruhe": {
       "event_id": "karlsruhe",
-      "fetched_at": "2026-09-05T05:27:01.034348+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014671+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "dublin": {
       "event_id": "dublin",
-      "fetched_at": "2026-09-05T05:27:01.034354+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014674+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "geneva": {
       "event_id": "geneva",
-      "fetched_at": "2026-09-05T05:27:01.034359+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014677+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "oslo": {
       "event_id": "oslo",
-      "fetched_at": "2026-09-05T05:27:01.034364+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014680+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "helsinki-may": {
       "event_id": "helsinki-may",
-      "fetched_at": "2026-09-05T05:27:01.034374+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014683+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "helsinki-dec": {
       "event_id": "helsinki-dec",
-      "fetched_at": "2026-09-05T05:27:01.034380+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014685+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "gdansk": {
       "event_id": "gdansk",
-      "fetched_at": "2026-09-05T05:27:01.034385+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014710+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "poznan": {
       "event_id": "poznan",
-      "fetched_at": "2026-09-05T05:27:01.034390+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014714+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "stockholm-wc": {
       "event_id": "stockholm-wc",
-      "fetched_at": "2026-09-05T05:27:01.034395+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014716+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "new-york": {
       "event_id": "new-york",
-      "fetched_at": "2026-09-05T05:27:01.034400+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014719+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "washington": {
       "event_id": "washington",
-      "fetched_at": "2026-09-05T05:27:01.034405+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014721+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "salt-lake-city": {
       "event_id": "salt-lake-city",
-      "fetched_at": "2026-09-05T05:27:01.034410+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014724+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "boston": {
       "event_id": "boston",
-      "fetched_at": "2026-09-05T05:27:01.034416+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014727+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "dallas": {
       "event_id": "dallas",
-      "fetched_at": "2026-09-05T05:27:01.034420+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014729+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "tampa": {
       "event_id": "tampa",
-      "fetched_at": "2026-09-05T05:27:01.034423+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014732+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "denver": {
       "event_id": "denver",
-      "fetched_at": "2026-09-05T05:27:01.034425+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014734+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "nashville": {
       "event_id": "nashville",
-      "fetched_at": "2026-09-05T05:27:01.034428+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014737+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "anaheim": {
       "event_id": "anaheim",
-      "fetched_at": "2026-09-05T05:27:01.034430+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014740+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "ottawa": {
       "event_id": "ottawa",
-      "fetched_at": "2026-09-05T05:27:01.034432+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014743+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "toronto": {
       "event_id": "toronto",
-      "fetched_at": "2026-09-05T05:27:01.034436+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014746+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "vancouver": {
       "event_id": "vancouver",
-      "fetched_at": "2026-09-05T05:27:01.034439+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014749+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "mexico-city": {
       "event_id": "mexico-city",
-      "fetched_at": "2026-09-05T05:27:01.034442+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014752+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "sydney": {
       "event_id": "sydney",
-      "fetched_at": "2026-09-05T05:27:01.034444+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014755+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "hong-kong": {
       "event_id": "hong-kong",
-      "fetched_at": "2026-09-05T05:27:01.034447+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014759+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "chiba": {
       "event_id": "chiba",
-      "fetched_at": "2026-09-05T05:27:01.034449+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014763+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "incheon": {
       "event_id": "incheon",
-      "fetched_at": "2026-09-05T05:27:01.034452+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014765+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "seoul": {
       "event_id": "seoul",
-      "fetched_at": "2026-09-05T05:27:01.034455+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014768+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "hangzhou": {
       "event_id": "hangzhou",
-      "fetched_at": "2026-09-05T05:27:01.034457+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014770+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "jakarta": {
       "event_id": "jakarta",
-      "fetched_at": "2026-09-05T05:27:01.034460+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014772+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "delhi": {
       "event_id": "delhi",
-      "fetched_at": "2026-09-05T05:27:01.034462+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014774+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "buenos-aires": {
       "event_id": "buenos-aires",
-      "fetched_at": "2026-09-05T05:27:01.034464+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014776+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "johannesburg-may": {
       "event_id": "johannesburg-may",
-      "fetched_at": "2026-09-05T05:27:01.034467+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014778+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "johannesburg-nov": {
       "event_id": "johannesburg-nov",
-      "fetched_at": "2026-09-05T05:27:01.034470+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014780+00:00",
       "status": "not_on_sale",
       "divisions": {}
     },
     "cape-town-aug": {
       "event_id": "cape-town-aug",
-      "fetched_at": "2026-09-05T05:27:01.034472+00:00",
+      "fetched_at": "2026-09-05T09:15:44.014782+00:00",
       "status": "not_on_sale",
       "divisions": {}
     }
